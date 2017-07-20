@@ -5,15 +5,20 @@ total_mass       = 1.6                   # kg     (bad approx)
 rocket_length    = 0.18                  # m      (7 inch)
 inner_diameter   = 0.025                 # m      (good)
 outer_diameter   = 0.029                 # m      (?)
-core_diameter    = 0.0051                # m      (?)
+core_diameter    = 0.005                 # m      (?)
 inner_radius     = inner_diameter / 2.0  # m
 outer_radius     = outer_diameter / 2.0  # m
 core_radius      = core_diameter  / 2.0  # m
 drag_coefficient = 0.4                   # ()     (approx)
 burn_rate        = 0.1                   # m/s    (bad approx)
-fuel_density     = 400.0                  # kg/m^3 (bad approx)
+fuel_density     = 600.0                # kg/m^3 (bad approx)
 fuel_mass        = pi * fuel_density * rocket_length * \
                     (inner_radius**2 - core_radius**2)
+burn_temperature = 500.0 # C
+nozzle_diameter  = 0.79375
+nozzle_area      = pi * (nozzle_diameter / 2)**2
+inlet_area       = inner_radius ** 2 * pi
+outlet_area      = inlet_area
 
 ##################### PHYSICAL CONSTANTS ####################
 G_constant      = 6.67408e-11  # m^3/(kg*s^2)

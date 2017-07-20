@@ -23,9 +23,6 @@ t_max
 
 pressure = 0
 
-
-
-
 if __name__ == '__main__':
     core_radius = core_diameter/2.0
     t = 0
