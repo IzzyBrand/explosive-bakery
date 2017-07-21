@@ -1,0 +1,10 @@
+Corn Syrup, Sugar, Potassium Nitrate
+    17% sugar
+    18% corn syrup
+    65% potassium nitrate
+    Example (320 g batch)
+        54.4 g sugar
+        57.6 g corn syrup
+        208 g potassium nitrate
+
+
