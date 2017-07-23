@@ -6,6 +6,23 @@ import serial
 import sys
 import os
 import json
+import argparse
+import coloredlogs, logging
+from datetime import datetime
+
+if __name__ == '__main__':
+    FORMAT = '%(asctime)-15s %(message)s'
+    coloredlogs.install(fmt=FORMAT, level='DEBUG')
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-n", "--name", help='Launch name')
+    ap.add_argument("-j", "--json-file", type=argparse.FileType('rw+'),
+        help="Specify JSON data file to use")
+    ap.add_argument("-d", "--launch_date", help="Launch date for new launches (yy-mm-dd).")
+    try:
+        args = vars(ap.parse_args())
+    except IOError:
+        logging.error('JSON file not found...')
+        sys.exit(0)
 
 defaults = {
     'serial_port': '/dev/tty.wchusbserial1410',
@@ -15,7 +32,7 @@ defaults = {
     'rocket_fuel_mass': 0.0,
     'rocket_mass': 0.0,
     'rocket_material': 'PVC',
-    'fuel_type': 'Candy',
+    'fuel_type': 'Corn Syrup',
     'nozzle_used': True,
     'comments': '',
     'data': {},
@@ -138,18 +155,38 @@ def get_defaults():
     return defaults
 
 if __name__ == '__main__':
-    try:
-        file_path = os.path.abspath(sys.argv[1])
-        if not os.path.exists(file_path):
-            raise IOError
+    if args['json_file'] is not None:
+        f = args['json_file']
+        opts = get_opt_dict(json.load(args['json_file']))
+        args['json_file'].close()
+        f = open(args['json_file'].name, 'w')
+    elif args['name'] is not None:
+        opts = get_defaults()
+        opts['filename'] = args['name'] + '-data.json'
+        opts = get_opt_dict(opts)
+        while True:
+            try:
+                inp = raw_input('Launch date (yy-mm-dd): ')
+                date = datetime.strptime(inp, '%y-%m-%d')
+                break
+            except KeyboardInterrupt:
+                logging.warning('Exiting...')
+                sys.exit(0)
+            except ValueError:
+                logging.warning('Invalid format...')
+                continue
 
-        opts = json.load(open(file_path, 'r'))
-        json.dump(json_sort(get_opt_dict(options=opts)),
-                  open(file_path, 'w'), indent=2)
-    except IndexError:
-        print 'Must be run with format:'
-        print 'python set_options.py <file-name.json>'
-    except IOError:
-        print 'File not found...'
+        date_folder = date.strftime('%y-%m-%d')
+        os.mkdir(date_folder) if not os.path.exists(date_folder) else None
+        launch_folder = '%s/%s' % (date_folder, args['name'])
+        os.mkdir(launch_folder) if not os.path.exists(launch_folder) else None
+        file_path = '%s/%s' % (launch_folder, opts['filename'])
+        f = open(file_path, 'w')
+    else:
+        logging.error('Require either launch name (-n) or JSON file path (-j)')
+        sys.exit(0)
 
+    json.dump(json_sort(opts), f, indent=2)
+    f.close()
+    logging.debug('JSON written.')
 

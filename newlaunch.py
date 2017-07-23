@@ -32,6 +32,7 @@ ap.add_argument("-l", "--length", type=float,
 ap.add_argument("-d", "--diameter", type=float,
     help='rocket diameter')
 ap.add_argument('--date', help='The date on which the test occured. YY-MM-DD.')
+ap.add_argument('-j', '--json-file', help='Use pre-existing JSON file')
 args = vars(ap.parse_args())
 
 # configure logging
@@ -43,18 +44,29 @@ if TEST_MODE:
 if IMPORT_CSV and TEST_MODE:
     logging.warning('Importing CSV')
 
-# populate the test options JSON with cl args
-options = set_options.get_defaults()
-if args['nozzle'] is not None: options['nozzle_used'] = args['nozzle']
-if args['diameter'] is not None: options['rocket_diameter'] = args['diameter']
-if args['length'] is not None: options['rocket_length'] = args['length']
-if args['serial_port'] is not None: options['serial_port'] = args['serial_port']
-# allow the use of the CLI if requested
-if args['cli']: options = set_options.get_opt_dict(options=options)
-# make a folder for today
-date = datetime.datetime.now()
-date_folder = date.strftime('%y-%m-%d') if args['date'] is None else args['date']
-os.mkdir(date_folder) if not os.path.exists(date_folder) else False
+if args['json_file'] is None:
+    # populate the test options JSON with cl args
+    options = set_options.get_defaults()
+    if args['nozzle'] is not None: options['nozzle_used'] = args['nozzle']
+    if args['diameter'] is not None: options['rocket_diameter'] = args['diameter']
+    if args['length'] is not None: options['rocket_length'] = args['length']
+    if args['serial_port'] is not None: options['serial_port'] = args['serial_port']
+    # allow the use of the CLI if requested
+    if args['cli']: options = set_options.get_opt_dict(options=options)
+    # make a folder for today
+    date = datetime.datetime.now()
+    date_folder = date.strftime('%y-%m-%d') if args['date'] is None else args['date']
+    os.mkdir(date_folder) if not os.path.exists(date_folder) else False
+
+else:
+    try:
+        f = open(args['json_file'])
+        options = json.load(f)
+        f.close()
+        file_path = f.name
+    except IOError:
+        logging.error('Could not find JSON file.')
+        sys.exit(0)
 
 # ensure we have a valid serial connection
 ser = None
@@ -73,38 +85,41 @@ while True:
         logging.error('Serial port not found')
         ser = None
 
-# ensure we have a valid subfolder name in which to store the test
-trial_folder = args['name']
-while True:
-    if trial_folder is None:
-        try:
-            trial_folder = raw_input('Input trial name: ')
-        except KeyboardInterrupt:
-            print ''
-            logging.warning('Quitting...')
-            sys.exit(0)
+if args['json_file'] is None:
+    # ensure we have a valid subfolder name in which to store the test
+    trial_folder = args['name']
+    while True:
+        if trial_folder is None:
+            try:
+                trial_folder = raw_input('Input trial name: ')
+            except KeyboardInterrupt:
+                print ''
+                logging.warning('Quitting...')
+                sys.exit(0)
 
-    path = '%s/%s' % (date_folder, trial_folder)
-    if not os.path.exists(path):
-        try:
-            os.mkdir(path)
-            break
-        except:
-            logging.error('Failed to create {}'.format(trial_name))
+        path = '%s/%s' % (date_folder, trial_folder)
+        if not os.path.exists(path):
+            try:
+                os.mkdir(path)
+                break
+            except:
+                logging.error('Failed to create {}'.format(trial_name))
+                trial_folder = None
+        else:
+            logging.error('Trial {} already exists.'.format(trial_folder))
             trial_folder = None
-    else:
-        logging.error('Trial {} already exists.'.format(trial_folder))
-        trial_folder = None
 
-fname = trial_folder + '-data.json'
-file_path = '%s/%s' % (path, fname)
+    fname = trial_folder + '-data.json'
+    file_path = '%s/%s' % (path, fname)
+else:
+    fname = options['filename']
 
 try:
     raw_input('\nPress enter to begin logging, or <ctrl-c> to exit.\n')
 except KeyboardInterrupt:
     print ''
     logging.warning('Quitting... path removed.')
-    os.rmdir(path) # if the user cancels the test, remove the test folder
+    os.rmdir(path) if args['json_file'] is not None else None # if the user cancels the test, remove the test folder
     sys.exit(0)
 
 
