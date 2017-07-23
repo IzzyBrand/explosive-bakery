@@ -8,3 +8,6 @@
 *.fls
 *.out
 *.synctex.gz
+*.stl
+*.MOV
+*.mov

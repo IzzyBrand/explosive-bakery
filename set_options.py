@@ -11,7 +11,7 @@ import coloredlogs, logging
 from datetime import datetime
 
 if __name__ == '__main__':
-    FORMAT = '%(asctime)-15s %(message)s'
+    FORMAT = "[%(asctime)4s] %(message)s"
     coloredlogs.install(fmt=FORMAT, level='DEBUG')
     ap = argparse.ArgumentParser()
     ap.add_argument("-n", "--name", help='Launch name')
@@ -52,7 +52,8 @@ def str_prompt(string):
     try:
         return raw_input(string)
     except KeyboardInterrupt:
-        print '\nExiting...'
+        print ''
+        logging.warning('Exiting...')
         sys.exit(0)
 
 def numb_prompt(prompt, value):
@@ -61,10 +62,11 @@ def numb_prompt(prompt, value):
             inp = raw_input(prompt)
             return float(inp)
         except KeyboardInterrupt:
-            print '\nExiting...'
+            print ''
+            logging.warning('Exiting...')
             sys.exit(0)
         except ValueError:
-            print '%s must be a number...' % value
+            logging.error('%s must be a number...' % value)
 
 def get_parameter(opts):
     print '\nEnter parameters (ctrl-c to exit)'
@@ -86,10 +88,11 @@ def get_parameter(opts):
             option = int(option)
             return option
         except KeyboardInterrupt:
-            print '\nExiting...'
+            print ''
+            logging.warning('Exiting...')
             sys.exit(0)
         except ValueError:
-            print 'Invalid input'
+            logging.error('Invalid input')
 
 def get_opt_dict(options=defaults):
     while True:
@@ -103,7 +106,7 @@ def get_opt_dict(options=defaults):
                     serial.Serial(options['serial_port'])
                     break
                 except serial.SerialException:
-                    print 'Serial port not detected.'
+                    logging.error('Serial port not detected.')
         elif opt == 2:
             options['baud_rate'] = numb_prompt('Baud Rate: ', 'Baud rate')
         elif opt == 3:
@@ -137,9 +140,10 @@ def get_opt_dict(options=defaults):
                         break
 
                 except ValueError:
-                    print 'Invalid input...'
+                    logging.error('Invalid input...')
                 except KeyboardInterrupt:
-                    print '\nExiting...'
+                    print ''
+                    logging.warning('Exiting...')
                     sys.exit(0)
         elif opt == 10:
             if not options['comments']:
@@ -147,7 +151,7 @@ def get_opt_dict(options=defaults):
             else:
                 options['comments'] += '\n%s' % str_prompt('Additional comments: ')
         else:
-            print 'Invalid input...'
+            logging.error('Invalid input...')
 
     return options
 
@@ -170,6 +174,7 @@ if __name__ == '__main__':
                 date = datetime.strptime(inp, '%y-%m-%d')
                 break
             except KeyboardInterrupt:
+                print ''
                 logging.warning('Exiting...')
                 sys.exit(0)
             except ValueError:

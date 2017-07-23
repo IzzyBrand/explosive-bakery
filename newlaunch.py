@@ -36,13 +36,15 @@ ap.add_argument('-j', '--json-file', help='Use pre-existing JSON file')
 args = vars(ap.parse_args())
 
 # configure logging
-FORMAT = '%(asctime)-15s %(message)s'
+FORMAT = '%(asctime)-15s \t %(message)s'
 coloredlogs.install(fmt=FORMAT, level='DEBUG')
 
 if TEST_MODE:
     logging.warning('Running in Test Mode')
 if IMPORT_CSV and TEST_MODE:
     logging.warning('Importing CSV')
+
+date = datetime.datetime.now()
 
 if args['json_file'] is None:
     # populate the test options JSON with cl args
@@ -54,7 +56,6 @@ if args['json_file'] is None:
     # allow the use of the CLI if requested
     if args['cli']: options = set_options.get_opt_dict(options=options)
     # make a folder for today
-    date = datetime.datetime.now()
     date_folder = date.strftime('%y-%m-%d') if args['date'] is None else args['date']
     os.mkdir(date_folder) if not os.path.exists(date_folder) else False
 
@@ -113,6 +114,7 @@ if args['json_file'] is None:
     file_path = '%s/%s' % (path, fname)
 else:
     fname = options['filename']
+    trial_folder = options['filename'].replace('-data', '')
 
 try:
     raw_input('\nPress enter to begin logging, or <ctrl-c> to exit.\n')
