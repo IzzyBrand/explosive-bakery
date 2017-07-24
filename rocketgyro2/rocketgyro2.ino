@@ -3,6 +3,8 @@
 #include "MPU6050.h"
 #include "Wire.h"
 
+#define N_ITERS_BEFORE_FLUSH 20  // number of loops before data is flushed to file (higher = faster, but more risk of data loss)
+
 MPU6050 accelgyro;
 const int micPin = A0;
 
@@ -13,12 +15,13 @@ int16_t microphone;
 double timeStep, time, timePrev;
 double arx, ary, arz, grx, gry, grz, gsx, gsy, gsz, rx, ry, rz;
 
-int i;
+bool firstRun = true;  // is this the first loop of the code?
+int flushCounter = 0;  // keep track of how many loops we've been through before we want to flush to file
 double gyroScale = 131;
 
 String incrementFileName = "counter.txt";  // the name of the file that stores the log number
 String logFileName = "noCounter.txt"; // this is the default filename to write to if we don't get a log number
-int logNumber = 0;                // string to store the number we read from counterFile
+int logNumber = 0;  // string to store the number we read from counterFile
 
 int chipSelect = 10;
 
@@ -29,24 +32,18 @@ void setup() {
 
   Wire.begin();
   Serial.begin(9600);
+  time = millis();
 
   // open counterFile and read in the number
   if (!SD.begin(chipSelect)) {
     Serial.println("Card initialization failed!");
+    // TODO: make this error more aggressive
     return;
   }
   incrementFile = SD.open(incrementFileName);
 
-  time = millis();
-
-  i = 1;
-
   if (incrementFile) {
-    Serial.println("incrementFile initialized");
-    //    while (incrementFile.available()) {
-    //      logNumber += incrementFile.read();
-    //      Serial.println("reading");
-    //    }
+    // Serial.println("incrementFile initialized");
     logNumber = incrementFile.parseInt();
     incrementFile.close();
     SD.remove(incrementFileName);
@@ -58,14 +55,14 @@ void setup() {
     incrementFile.close();
   }
   // turn the logNumber into a fileName and open it to log to
-  if (logNumber > 0) {
-     logFileName = "log_" + String(logNumber) + ".txt";
-  }
+  if (logNumber > 0)
+    logFileName = "log_" + String(logNumber) + ".txt";
 
+  // initialize arduino hardware
   pinMode(micPin, INPUT);
   accelgyro.initialize();
 
-  // open log
+  // open logfile
   logFile = SD.open(logFileName, FILE_WRITE);
   
   delay(1);
@@ -73,6 +70,13 @@ void setup() {
 }
 
 void loop() {
+  /**
+    Important TODO:
+      - take multiple readings per loop step and average them to filter out noise
+        + this includes accelerometer / gyro / temperature / microphone
+      - determine what to do about nan accelerometer values
+      - re-enable filtering to get better angle measurements
+  */
 
   // set up time for integration
   timePrev = time;
@@ -85,17 +89,17 @@ void loop() {
   microphone = analogRead(micPin);
 
   // apply gyro scale from datasheet
-  gsx = gx/gyroScale;
-  gsy = gy/gyroScale;
-  gsz = gz/gyroScale;
+  gsx = gx / gyroScale;
+  gsy = gy / gyroScale;
+  gsz = gz / gyroScale;
 
   // calculate accelerometer angles
-  arx = (180/3.141592) * atan(ax / sqrt(sq(ay) + sq(az))); 
-  ary = (180/3.141592) * atan(ay / sqrt(sq(ax) + sq(az)));
-  arz = (180/3.141592) * atan(sqrt(sq(ay) + sq(ax)) / az);
+  arx = (180 / 3.141592) * atan(ax / sqrt(sq(ay) + sq(az))); 
+  ary = (180 / 3.141592) * atan(ay / sqrt(sq(ax) + sq(az)));
+  arz = (180 / 3.141592) * atan(sqrt(sq(ay) + sq(ax)) / az);
 
   // set initial values equal to accel values
-  if (i == 1) {
+  if (firstRun) {
     if (isnan(arx))
       grx = 0;
     else
@@ -108,9 +112,8 @@ void loop() {
       grz = 0;
     else
       grz = arz;
-  }
-  // integrate to find the gyro angle
-  else {
+    firstRun = false;  // never again!
+  } else {  // integrate to find the gyro angle
     grx = grx + (timeStep * gsx);
     gry = gry + (timeStep * gsy);
     grz = grz + (timeStep * gsz);
@@ -147,28 +150,26 @@ void loop() {
   //  Serial.print(gsz); Serial.print("\t");
   //  Serial.println();
 
-  
-
   writeToLog(arx, ary, arz,  // rot from acceleration
             grx, gry, grz,  // rot from gyro
             microphone, temperature);
 
-  i = i + 1;
   delay(1);
 
 }
-int c = 0;
+
+// Write data to logfile on SD card
 int writeToLog(float ax, float ay, float az, float gx, float gy, float gz, int16_t mic, int16_t temp) {
   String strLine = String(ax) + ",\t" + String(ay) + ",\t" + String(az) + ",\t" + 
                    String(gx) + ",\t" + String(gy) + ",\t" + String(gz) + ",\t" + 
                    String(mic) + ",\t" + String(temp);
   Serial.println(strLine);
   logFile.println(strLine);
-  if (c == 10) {
+  if (flushCounter == N_ITERS_BEFORE_FLUSH) {
     logFile.flush();
-    c = 0;
+    flushCounter = 0;
   }
-  c += 1;
+  flushCounter += 1;
 }
 
 /*
