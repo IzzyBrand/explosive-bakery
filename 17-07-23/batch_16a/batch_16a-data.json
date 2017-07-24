@@ -1,0 +1,15 @@
+{
+  "date": "17-07-23-18-14-26", 
+  "serial_port": "/dev/tty.wchusbserial1410", 
+  "baud_rate": 115200, 
+  "rocket_length": 7.0, 
+  "rocket_diameter": 1.0, 
+  "rocket_material": "PVC", 
+  "rocket_fuel_mass": 0.0, 
+  "rocket_mass": 0.0, 
+  "fuel_type": "Corn Syrup + Rust", 
+  "nozzle_used": false, 
+  "filename": "batch_16a-data.json", 
+  "comments": "Bad batch", 
+  "data": {}
+}

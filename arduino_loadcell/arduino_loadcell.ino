@@ -16,5 +16,5 @@ void setup() {
 void loop() {
   Serial.print(millis());
   Serial.print(",\t");
-  Serial.println(scale.get_units(1000));
+  Serial.println(scale.get_units(200));
 }
