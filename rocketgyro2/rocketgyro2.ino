@@ -119,6 +119,7 @@ void loop() {
     grz = grz + (timeStep * gsz);
   }  
 
+  // TODO: get this working... this rotational estimate should be more accurate than previous
   // apply filter
   rx = (0.96 * arx) + (0.04 * grx);
   ry = (0.96 * ary) + (0.04 * gry);
@@ -166,6 +167,7 @@ int writeToLog(float ax, float ay, float az, float gx, float gy, float gz, int16
   Serial.println(strLine);
   logFile.println(strLine);
   if (flushCounter == N_ITERS_BEFORE_FLUSH) {
+    // to increase speed, we only flush to file once every N_ITERS_BEFORE_FLUSH loops
     logFile.flush();
     flushCounter = 0;
   }
