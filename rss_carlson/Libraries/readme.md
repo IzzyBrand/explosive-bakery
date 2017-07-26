@@ -1,0 +1,1 @@
+Unzip and drag into ~/Documents/Arduino/libraries/
