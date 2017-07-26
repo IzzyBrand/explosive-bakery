@@ -1,4 +1,4 @@
-# Rocketry Survey System: Carlson
+# Carlson: Chute Deployment and Logging System
 
 This directory contains code for the first Carlson system.
 

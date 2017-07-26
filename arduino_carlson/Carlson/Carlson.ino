@@ -1,4 +1,4 @@
-// Rocket Survey System: Carlson
+// Carlson: Chute Deployment and Logging System
 // 
 // Code by: Benjamin Shanahan & Isaiah Brand
 
