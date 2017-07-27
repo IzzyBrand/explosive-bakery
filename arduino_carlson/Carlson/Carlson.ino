@@ -2,42 +2,7 @@
 // 
 // Code by: Benjamin Shanahan & Isaiah Brand
 
-
-///////////////////////////////////////////////////////////////////////////////
-// INCLUDE, DEFINITIONS, VARIABLES                                           //
-///////////////////////////////////////////////////////////////////////////////
-
-#include <SD.h>
-#include "I2Cdev.h"
-#include "MPU6050.h"
-#include "Wire.h"
-#include "../Carlson.h"
-
-// Raw analog input values
-int16_t ax, ay, az, gx, gy, gz;
-int16_t temperature;
-int16_t microphone;
-
-// Computed timing and rotation variables
-double timeStep, time, timePrev;
-double arx, ary, arz, grx, gry, grz, gsx, gsy, gsz, rx, ry, rz;
-
-// Counters and booleans
-bool firstRun = true;    // is this the first loop of the code?
-int flushCounter = 0;    // number of loops after last flush
-double gyroScale = 131;
-
-// Saving and incrementing data logfiles
-String incrementFileName = "counter.txt";  // incremental data file name
-String logFileName = "noCounter.txt";  // default filename 
-File incrementFile;
-File logFile;
-int logNumber = 0;  // string to store the number we read from counterFile
-
-
-///////////////////////////////////////////////////////////////////////////////
-// HARDWARE CONFIGURATION                                                    //
-///////////////////////////////////////////////////////////////////////////////
+#include "Carlson.h"
 
 void setup()
 {
@@ -77,17 +42,20 @@ void setup()
     pinMode(MICROPHONE_PIN, INPUT);
     accelgyro.initialize();
 
+    // Set accel/gyro offsets
+    accelgyro.setXAccelOffset(OFFSET_ACCEL_X);
+    accelgyro.setYAccelOffset(OFFSET_ACCEL_Y);
+    accelgyro.setZAccelOffset(OFFSET_ACCEL_Z);  
+    accelgyro.setXGyroOffset(OFFSET_GYRO_X);
+    accelgyro.setYGyroOffset(OFFSET_GYRO_Y);
+    accelgyro.setZGyroOffset(OFFSET_GYRO_Z);
+
     // open logfile
     logFile = SD.open(logFileName, FILE_WRITE);
 
     delay(1);
 
 }
-
-
-///////////////////////////////////////////////////////////////////////////////
-// PROGRAM LOOP                                                              //
-///////////////////////////////////////////////////////////////////////////////
 
 void loop()
 {
@@ -134,19 +102,22 @@ void loop()
     // ry = (0.96 * ary) + (0.04 * gry);
     // rz = (0.96 * arz) + (0.04 * grz);
 
-    writeToLog(arx, ary, arz,  // rot from acceleration
-            grx, gry, grz,  // rot from gyro
-            microphone, temperature);
+    Serial.print(String(ax) + "\t");
+    Serial.print(String(ay) + "\t");
+    Serial.print(String(az) + "\t");
+    Serial.print(String(grx) + "\t");
+    Serial.print(String(gry) + "\t");
+    Serial.print(String(grz) + "\t");
+    Serial.println();
+
+    // writeToLog(ax, ay, az,  // rot from acceleration
+    //         grx, gry, grz,  // rot from gyro
+    //         microphone, temperature);
 
     if (firstRun) firstRun = false;
     delay(1);
 
 }
-
-
-///////////////////////////////////////////////////////////////////////////////
-// HELPER FUNCTIONS                                                          //
-///////////////////////////////////////////////////////////////////////////////
 
 // Write data to logfile on SD card
 int writeToLog(float ax, float ay, float az, float gx, float gy, float gz, int16_t mic, int16_t temp)
@@ -164,24 +135,24 @@ int writeToLog(float ax, float ay, float az, float gx, float gy, float gz, int16
     flushCounter += 1;
 }
 
-/*
- *  +/- 250 degrees/s  (default)
- *  +/- 500 degrees/s  
- *  +/- 1000 degrees/s 
- *  +/- 2000 degrees/s 
- */
-float raw_to_degrees(long raw, int scale)
-{
-    return float(raw) / 32768.0 * float(scale);
-}
+// /*
+//  *  +/- 250 degrees/s  (default)
+//  *  +/- 500 degrees/s  
+//  *  +/- 1000 degrees/s 
+//  *  +/- 2000 degrees/s 
+//  */
+// float raw_to_degrees(long raw, int scale)
+// {
+//     return float(raw) / 32768.0 * float(scale);
+// }
 
-/*
- *  +/- 2g  (default)
- *  +/- 4g 
- *  +/- 8g  
- *  +/- 16g 
- */
-float raw_to_mss(long raw, int scale)
-{
-    return float(raw) / 32768.0 * float(scale) * 9.81;
-}
+// /*
+//  *  +/- 2g  (default)
+//  *  +/- 4g 
+//  *  +/- 8g  
+//  *  +/- 16g 
+//  */
+// float raw_to_mss(long raw, int scale)
+// {
+//     return float(raw) / 32768.0 * float(scale) * 9.81;
+// }

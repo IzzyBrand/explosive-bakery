@@ -29,7 +29,7 @@ MPU6050 accelgyro;
 int16_t ax, ay, az, gx, gy, gz;
 int32_t axavg, ayavg, azavg, gxavg, gyavg, gzavg;
 
-int n = 500;  // average over n readings
+int n = 10;  // average over n readings
 
 void setup()
 {
@@ -37,7 +37,7 @@ void setup()
     Serial.begin(9600);
     accelgyro.initialize();
 
-    // Tare offsets
+    // Set accel/gyro offsets
     accelgyro.setXAccelOffset(OFFSET_ACCEL_X);
     accelgyro.setYAccelOffset(OFFSET_ACCEL_Y);
     accelgyro.setZAccelOffset(OFFSET_ACCEL_Z);  
