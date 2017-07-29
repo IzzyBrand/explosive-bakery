@@ -85,8 +85,8 @@ def get_parameter(opts):
     while 1:
         try:
             option = raw_input('> ')
-            if options == '':
-                options = 0
+            if option == '':
+                option = 0
             option = int(option)
             return option
         except KeyboardInterrupt:
