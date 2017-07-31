@@ -1,5 +1,12 @@
 // Carlson: Chute Deployment and Logging System
 // 
+// This script will boot Carlson, lock nose-cone after successful
+// initialization, record gyro / accel / temperature / microphone sensor
+// readings during rocket flight, and deploy chute at altitude. 
+//
+// Chute deployment occurs after the Z accelerometer consistently measures
+// less than -0.9g of downward force for n seconds.
+//
 // Code by: Benjamin Shanahan & Isaiah Brand
 
 #include "Carlson.h"
@@ -7,51 +14,24 @@
 void setup()
 {
 
+    if (SERIAL)
+        Serial.begin(BAUD_RATE);
     Wire.begin();
-    Serial.begin(BAUD_RATE);
     time = millis();
 
-    // open counterFile and read in the number
-    if (!SD.begin(CHIP_SELECT_PIN))
-    {
-        Serial.println("Card initialization failed!");
-        // TODO: make this error more aggressive
-        return;
-    }
-    incrementFile = SD.open(incrementFileName);
-
-    if (incrementFile)
-    {
-        // Serial.println("incrementFile initialized");
-        logNumber = incrementFile.parseInt();
-        incrementFile.close();
-        SD.remove(incrementFileName);
-    }
-    // open the counterFile as WRITE and write the next number
-    incrementFile = SD.open(incrementFileName, FILE_WRITE);
-    if (incrementFile)
-    {
-        incrementFile.print(logNumber + 1);
-        incrementFile.close();
-    }
-    // turn the logNumber into a fileName and open it to log to
-    if (logNumber > 0)
-        logFileName = "log_" + String(logNumber) + ".txt";
+    // initialize SD card logging
+    initializeSDLogging();
 
     // initialize arduino hardware
     pinMode(MICROPHONE_PIN, INPUT);
     accelgyro.initialize();
-
-    // Set accel/gyro offsets
-    accelgyro.setXAccelOffset(OFFSET_ACCEL_X);
-    accelgyro.setYAccelOffset(OFFSET_ACCEL_Y);
-    accelgyro.setZAccelOffset(OFFSET_ACCEL_Z);  
-    accelgyro.setXGyroOffset(OFFSET_GYRO_X);
-    accelgyro.setYGyroOffset(OFFSET_GYRO_Y);
-    accelgyro.setZGyroOffset(OFFSET_GYRO_Z);
+    setCalibratedOffsets();  // set MPU6050 offsets
 
     // open logfile
     logFile = SD.open(logFileName, FILE_WRITE);
+
+    if (SERIAL)
+        Serial.println("Carlson initialization successful.");
 
     delay(1);
 
@@ -59,34 +39,61 @@ void setup()
 
 void loop()
 {
-    /**
-    Important TODO:
-      - take multiple readings per loop step and average them to filter out 
-        noise
-        + this includes accelerometer / gyro / temperature / microphone
-      - determine what to do about nan accelerometer values
-      - re-enable filtering to get better angle measurements
-    */
 
-    // set up time for integration
+    for (int i = 0; i < N_SAMPLES_PER_MEASUREMENT; i++)
+    {
+        // collect readings from hardware
+        accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+        temperature = accelgyro.getTemperature();
+        microphone  = analogRead(MICROPHONE_PIN);
+
+        // sum sensor readings
+        sumax += ax;
+        sumay += ay;
+        sumaz += az;
+        sumgx += gx;
+        sumgy += gy;
+        sumgz += gz;
+        sumTemperature += temperature;
+
+        // if current microphone reading is greater than or less than
+        // max or min, respectively, replace those values
+        if (microphone < MAXIMUM_ANALOG_IN_VALUE)  // reject impossible samples
+        {
+            if (microphone > maxMicSample)
+                maxMicSample = microphone;
+            else if (microphone < minMicSample)
+                minMicSample = microphone;
+        }
+
+    }
+
+    // average and apply accelerometer scale from datasheet
+    asx = (sumax / N_SAMPLES_PER_MEASUREMENT) / accelScale;
+    asy = (sumay / N_SAMPLES_PER_MEASUREMENT) / accelScale;
+    asz = (sumaz / N_SAMPLES_PER_MEASUREMENT) / accelScale;
+
+    // average and apply gyro scale from datasheet
+    gsx = (sumgx / N_SAMPLES_PER_MEASUREMENT) / gyroScale;
+    gsy = (sumgy / N_SAMPLES_PER_MEASUREMENT) / gyroScale;
+    gsz = (sumgz / N_SAMPLES_PER_MEASUREMENT) / gyroScale;
+
+    // compute average temperature and microphone sample difference
+    tempAvg  = sumTemperature / N_SAMPLES_PER_MEASUREMENT;
+    micDiff  = maxMicSample - minMicSample;
+    micVolts = (micDiff * 5.0) / MAXIMUM_ANALOG_IN_VALUE;  // convert to volts
+
+    // reset sums
+    sumax = 0; sumay = 0; sumaz = 0;
+    sumgx = 0; sumgy = 0; sumgz = 0;
+    sumTemperature = 0;
+    maxMicSample = 0;
+    minMicSample = MAXIMUM_ANALOG_IN_VALUE;
+
+    // determine timestep for integration
     timePrev = time;
     time     = millis();
     timeStep = (time - timePrev) / 1000; // convert timestep to seconds
-
-    // collect readings
-    accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-    temperature = accelgyro.getTemperature();
-    microphone = analogRead(MICROPHONE_PIN);
-
-    // apply gyro scale from datasheet
-    gsx = gx / gyroScale;
-    gsy = gy / gyroScale;
-    gsz = gz / gyroScale;
-
-    // calculate accelerometer angles
-    // arx = (180 / 3.141592) * atan(ax / sqrt(sq(ay) + sq(az))); 
-    // ary = (180 / 3.141592) * atan(ay / sqrt(sq(ax) + sq(az)));
-    // arz = (180 / 3.141592) * atan(sqrt(sq(ay) + sq(ax)) / az);
 
     // integration of gyroscopic angular acceleration values
     if (!firstRun)
@@ -96,63 +103,131 @@ void loop()
         grz = grz + (timeStep * gsz);
     }
 
-    // TODO: get this working... this rotational estimate should be more accurate than previous
-    // apply filter
-    // rx = (0.96 * arx) + (0.04 * grx);
-    // ry = (0.96 * ary) + (0.04 * gry);
-    // rz = (0.96 * arz) + (0.04 * grz);
+    if (SERIAL && PRINT_SENSOR_VALUES)
+    {
+        Serial.print("A:\t");
+        Serial.print(String(asx) + "\t");
+        Serial.print(String(asy) + "\t");
+        Serial.print(String(asz) + "\t\t");
+        Serial.print("G:\t");
+        Serial.print(String(grx) + "\t");
+        Serial.print(String(gry) + "\t");
+        Serial.print(String(grz) + "\t\t");
+        Serial.print("T:\t");
+        Serial.print(String(tempAvg) + "\t");
+        Serial.print("M:\t");
+        Serial.print(String(micVolts) + "V");
+        Serial.println();
+    }
 
-    Serial.print(String(ax) + "\t");
-    Serial.print(String(ay) + "\t");
-    Serial.print(String(az) + "\t");
-    Serial.print(String(grx) + "\t");
-    Serial.print(String(gry) + "\t");
-    Serial.print(String(grz) + "\t");
-    Serial.println();
+    // check if we should deploy parachute
+    if (asz < DEPLOY_IF_Z_ACCEL_LESS_THAN)
+    {
+        if (SERIAL && PRINT_CHUTE_STATUS)
+            Serial.println("Rocket is falling!");
 
-    // writeToLog(ax, ay, az,  // rot from acceleration
-    //         grx, gry, grz,  // rot from gyro
-    //         microphone, temperature);
+        if (fallCounter == 0)
+            timeStartFall = millis();
+        
+        if (millis() - timeStartFall > FALL_TIME_REQ_PRE_DEPLOY)
+            deployChute = true;
+
+        fallCounter++;
+    }
+    else
+        fallCounter = 0;
+
+    // logic to deploy the parachute
+    if (deployChute)
+    {
+        if (SERIAL && PRINT_CHUTE_STATUS)
+            Serial.println("Deploying parachute!");
+
+        // TODO: add logic to turn servo motor and deploy parachute
+    }
+
+    writeToLog(ax, ay, az,  // rot from acceleration
+               grx, gry, grz,  // rot from gyro
+               micVolts, tempAvg);
 
     if (firstRun) firstRun = false;
-    delay(1);
 
 }
 
 // Write data to logfile on SD card
-int writeToLog(float ax, float ay, float az, float gx, float gy, float gz, int16_t mic, int16_t temp)
+int writeToLog(float ax, float ay, float az, 
+               float gx, float gy, float gz, 
+               int16_t mic, int16_t temp)
 {
-    String strLine = String(ax) + ",\t" + String(ay) + ",\t" + String(az) + ",\t" + 
-                    String(gx) + ",\t" + String(gy) + ",\t" + String(gz) + ",\t" + 
-                    String(mic) + ",\t" + String(temp);
-    Serial.println(strLine);
-    logFile.println(strLine);
+
+    String strLine = String(ax)+",\t" + String(ay)+",\t" + String(az)+",\t" + 
+                     String(gx)+",\t" + String(gy)+",\t" + String(gz)+",\t" + 
+                     String(mic)+",\t" + String(temp);
+
+    logFile.println(strLine);  // log to file
+    
     if (flushCounter == N_ITERS_BEFORE_FLUSH) {
         // to increase speed, we only flush to file once every N_ITERS_BEFORE_FLUSH loops
         logFile.flush();
         flushCounter = 0;
     }
+    
     flushCounter += 1;
+
 }
 
-// /*
-//  *  +/- 250 degrees/s  (default)
-//  *  +/- 500 degrees/s  
-//  *  +/- 1000 degrees/s 
-//  *  +/- 2000 degrees/s 
-//  */
-// float raw_to_degrees(long raw, int scale)
-// {
-//     return float(raw) / 32768.0 * float(scale);
-// }
+// Write offsets to MPU6050
+void setCalibratedOffsets()
+{
 
-// /*
-//  *  +/- 2g  (default)
-//  *  +/- 4g 
-//  *  +/- 8g  
-//  *  +/- 16g 
-//  */
-// float raw_to_mss(long raw, int scale)
-// {
-//     return float(raw) / 32768.0 * float(scale) * 9.81;
-// }
+    accelgyro.setXAccelOffset(OFFSET_ACCEL_X);
+    accelgyro.setYAccelOffset(OFFSET_ACCEL_Y);
+    accelgyro.setZAccelOffset(OFFSET_ACCEL_Z);  
+    accelgyro.setXGyroOffset(OFFSET_GYRO_X);
+    accelgyro.setYGyroOffset(OFFSET_GYRO_Y);
+    accelgyro.setZGyroOffset(OFFSET_GYRO_Z);
+
+}
+
+// Initialize SD card logging functionality
+// Code by Isaiah Brand
+//
+// Opens "counter.txt" on SD card, reads the integer contained in the file,
+// increments it, and writes the incremented number to the file. This number
+// is then appended to the in-flight logfile generated by Carlson (i.e. 
+// "LOG_4.txt"). Afterwards, "counter.txt" is closed, and the new logfile is
+// opened and available for writing data.
+void initializeSDLogging()
+{
+
+    // open counterFile and read in the number
+    if (!SD.begin(CHIP_SELECT_PIN))
+    {
+        if (SERIAL)
+            Serial.println("Card initialization failed!");
+
+        // TODO: make this error more aggressive; fail to lock nose cone
+        return;
+    }
+    incrementFile = SD.open(incrementFileName);
+
+    if (incrementFile)
+    {
+        logNumber = incrementFile.parseInt();
+        incrementFile.close();
+        SD.remove(incrementFileName);
+    }
+
+    // open the counterFile as WRITE and write the next number
+    incrementFile = SD.open(incrementFileName, FILE_WRITE);
+    if (incrementFile)
+    {
+        incrementFile.print(logNumber + 1);
+        incrementFile.close();
+    }
+
+    // turn the logNumber into a fileName and open it to log to
+    if (logNumber > 0)
+        logFileName = "log_" + String(logNumber) + ".txt";
+
+}
