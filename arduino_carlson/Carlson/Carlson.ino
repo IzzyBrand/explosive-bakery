@@ -79,7 +79,7 @@ void loop()
     gsz = (sumgz / N_SAMPLES_PER_MEASUREMENT) / gyroScale;
 
     // compute average temperature and microphone sample difference
-    tempAvg  = sumTemperature / N_SAMPLES_PER_MEASUREMENT;
+    tempAvg  = double(sumTemperature) / double(N_SAMPLES_PER_MEASUREMENT);
     micDiff  = maxMicSample - minMicSample;
     micVolts = (micDiff * 5.0) / MAXIMUM_ANALOG_IN_VALUE;  // convert to volts
 
@@ -148,7 +148,7 @@ void loop()
 
     writeToLog(ax, ay, az,  // rot from acceleration
                grx, gry, grz,  // rot from gyro
-               micVolts, tempAvg);
+               tempAvg, micVolts);
 
     if (firstRun) firstRun = false;
 
@@ -157,12 +157,12 @@ void loop()
 // Write data to logfile on SD card
 int writeToLog(float ax, float ay, float az, 
                float gx, float gy, float gz, 
-               int16_t mic, int16_t temp)
+               float temp, float mic)
 {
 
     String strLine = String(ax)+",\t" + String(ay)+",\t" + String(az)+",\t" + 
                      String(gx)+",\t" + String(gy)+",\t" + String(gz)+",\t" + 
-                     String(mic)+",\t" + String(temp);
+                     String(temp)+",\t" + String(mic);
 
     logFile.println(strLine);  // log to file
     

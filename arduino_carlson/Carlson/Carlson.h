@@ -44,7 +44,7 @@ int16_t microphone;
 
 // Computed variables
 double timeStep, time, timePrev;
-double micDiff, micVolts, tempAvg;
+float micDiff, micVolts, tempAvg;
 double asx, asy, asz, gsx, gsy, gsz;  // scaled
 double arx, ary, arz, grx, gry, grz, rx, ry, rz;  // rotation
 
@@ -75,7 +75,7 @@ File logFile;
 // Functions
 void setup();
 void loop();
-int writeToLog(float ax, float ay, float az, float gx, float gy, float gz, int16_t mic, int16_t temp);
+int writeToLog(float ax, float ay, float az, float gx, float gy, float gz, float temp, float mic);
 void setCalibratedOffsets();
 void initializeSDLogging();
 
