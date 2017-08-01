@@ -121,7 +121,7 @@ try:
 except KeyboardInterrupt:
     print ''
     logging.warning('Quitting... path removed.')
-    os.rmdir(path) if args['json_file'] is not None else None # if the user cancels the test, remove the test folder
+    os.rmdir(path) if args['json_file'] is None else None # if the user cancels the test, remove the test folder
     sys.exit(0)
 
 
