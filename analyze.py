@@ -1,4 +1,5 @@
 import sys
+import argparse
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
@@ -11,6 +12,14 @@ import json
 ##############
 ## requires matplotlib, numpy, scipy to be installed
 
+ap = argparse.ArgumentParser()
+ap.add_argument("-j", "--json-file", default=None, type=str, required=True,
+    help='JSON file to analyze')
+ap.add_argument("-r", "--reset-endpoints", default=False,
+    required=False, action='store_true',
+    help="""Reselect the endpoints of the thrust curve, if they have already
+ been set""")
+args = vars(ap.parse_args())
 
 ###################################################################
 #                       CONFIG
@@ -126,22 +135,16 @@ def integrate(x, y, yshift):
 #                       HERE'S THE SCRIPT
 ###################################################################
 
-if len(sys.argv) < 2:
-    print 'Must run with format:'
-    print 'python analyze.py <file-name.json>'
-    sys.exit(0)
-
-file_name = os.path.abspath(sys.argv[1])
-print file_name
-trial = os.path.basename(os.path.split(file_name)[0])
+file_name = args['json_file']
 if not os.path.exists(file_name):
-    print 'File not found.'
-    sys.exit(0)
+    raise IOError('JSON file not found')
+else:
+    f = open(file_name)
 
+trial = os.path.basename(os.path.split(file_name)[0])
 # read in all the data
-f = open(file_name)
 opts = json.load(f)
-if 'left_endpoint' not in opts and 'right_endpoint' not in opts:
+if 'left_endpoint' not in opts and 'right_endpoint' not in opts or args['reset_endpoints']:
     fig = plt.figure()
     ax = fig.add_subplot(111)
     coords = []
