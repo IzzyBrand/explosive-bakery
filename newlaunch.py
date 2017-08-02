@@ -189,5 +189,5 @@ logging.debug('Data written to JSON file...')
 # perform analysis if requested
 print 'Analyze now? [y/n]'
 if raw_input('> ') == 'y':
-    os.system('python %s/analyze.py "%s"' % (os.path.abspath(os.curdir), file_path))
+    os.system('python %s/analyze.py -j "%s"' % (os.path.abspath(os.curdir), file_path))
 
