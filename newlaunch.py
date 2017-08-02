@@ -19,12 +19,14 @@ IMPORT_CSV = False
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("-c", "--cli", action='store_true', default=False,
-    help='Use command line interface')
-ap.add_argument("-n", "--name", 
+group = ap.add_mutually_exclusive_group(required=True)
+group.add_argument('-j', '--json-file', help='Use pre-existing JSON file')
+group.add_argument("-n", "--name", 
     help='The name by which to save this test')
 ap.add_argument("-s", "--serial-port",
     help="Serial port of test stand Arduino (ls /dev)")
+ap.add_argument("-c", "--cli", action='store_true', default=False,
+    help='Use command line interface')
 ap.add_argument("--nozzle", action='store_true', default=True)
 ap.add_argument("--no-nozzle", action='store_false', dest='nozzle')
 ap.add_argument("-l", "--length", type=float,
@@ -32,7 +34,6 @@ ap.add_argument("-l", "--length", type=float,
 ap.add_argument("-d", "--diameter", type=float,
     help='rocket diameter')
 ap.add_argument('--date', help='The date on which the test occured. YY-MM-DD.')
-ap.add_argument('-j', '--json-file', help='Use pre-existing JSON file')
 args = vars(ap.parse_args())
 
 # configure logging
