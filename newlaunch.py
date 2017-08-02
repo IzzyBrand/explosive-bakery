@@ -120,10 +120,12 @@ try:
     raw_input('\nPress enter to begin logging, or <ctrl-c> to exit.\n')
 except KeyboardInterrupt:
     print ''
-    logging.warning('Quitting... path removed.')
-    os.rmdir(path) if args['json_file'] is not None else None # if the user cancels the test, remove the test folder
-    sys.exit(0)
+    if args['json_file'] is None: # remove folder if it was not created beforehand
+        logging.warning('Path removed...')
+        os.rmdir(path)
 
+    logging.warning('Quitting...')
+    sys.exit(0)
 
 # collect data from the serial port
 if not TEST_MODE:
@@ -132,6 +134,14 @@ if not TEST_MODE:
     print ser.readline().strip()
     times = []
     thrusts = []
+    while True:
+        try:
+            ser.readline()
+            break
+        except:
+            logging.critical('WARNING: Error in serial readline')
+            raw_input('Enter to try again, ctrl-c to quit...')
+
     while True:
         try:
             line = ser.readline();
