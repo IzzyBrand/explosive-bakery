@@ -24,6 +24,8 @@ void setup()
 
     // initialize arduino hardware
     pinMode(MICROPHONE_PIN, INPUT);
+    pinMode(BLUE_LED_PIN, OUTPUT);
+    pinMode(GREEN_LED_PIN, OUTPUT);
     accelgyro.initialize();
     setCalibratedOffsets();  // set MPU6050 offsets
 
@@ -82,6 +84,18 @@ void loop()
     tempAvg  = double(sumTemperature) / double(N_SAMPLES_PER_MEASUREMENT);
     micDiff  = maxMicSample - minMicSample;
     micVolts = (micDiff * 5.0) / MAXIMUM_ANALOG_IN_VALUE;  // convert to volts
+
+    // TODO: remove this for fun
+    if (micVolts > 1.0)
+    {
+        digitalWrite(BLUE_LED_PIN, HIGH);
+        digitalWrite(GREEN_LED_PIN, LOW);
+    }
+    else
+    {
+        digitalWrite(BLUE_LED_PIN, LOW);
+        digitalWrite(GREEN_LED_PIN, HIGH);
+    }
 
     // reset sums
     sumax = 0; sumay = 0; sumaz = 0;
