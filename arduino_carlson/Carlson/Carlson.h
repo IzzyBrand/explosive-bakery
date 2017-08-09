@@ -23,9 +23,11 @@
 #define OFFSET_GYRO_Z  23
 
 // Hardware and processing definitions
-#define N_SAMPLES_PER_MEASUREMENT 100    // how many measurement iters to avg
+#define N_SAMPLES_PER_MEASUREMENT 20    // how many measurement iters to avg
 #define N_ITERS_BEFORE_FLUSH      20     // # of loops before data is flushed
 #define MICROPHONE_PIN            A0     // mic input pin on arduino
+#define BLUE_LED_PIN              8      // blue led
+#define GREEN_LED_PIN             9      // green led
 #define CHIP_SELECT_PIN           10     // SD card logger chip select (CS) pin
 #define BAUD_RATE                 9600   // serial port baud rate
 #define MAXIMUM_ANALOG_IN_VALUE   1024   // maximum analog input value
