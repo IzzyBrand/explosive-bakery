@@ -11,7 +11,7 @@ outer_radius     = outer_diameter / 2.0  # m
 core_radius      = core_diameter  / 2.0  # m
 drag_coefficient = 0.4                   # ()     (approx)
 burn_rate        = 0.1                   # m/s    (bad approx)
-fuel_density     = 600.0                # kg/m^3 (bad approx)
+fuel_density     = 1674.213              # kg/m^3 (approx)
 fuel_mass        = pi * fuel_density * rocket_length * \
                     (inner_radius**2 - core_radius**2)
 burn_temperature = 500.0 # C
@@ -37,3 +37,6 @@ initial_velocity     = 0.0 # m/s
 initial_acceleration = 0.0 # m/s^2
 
 total_burn_time = (inner_radius - core_radius) / burn_rate # s
+
+k = 1.1
+M = 1.0
