@@ -14,10 +14,12 @@ if __name__ == '__main__':
     FORMAT = "[%(asctime)4s] %(message)s"
     coloredlogs.install(fmt=FORMAT, level='DEBUG')
     ap = argparse.ArgumentParser()
-    ap.add_argument("-n", "--name", help='Launch name')
-    ap.add_argument("-j", "--json-file", type=argparse.FileType('rw+'),
+    group = ap.add_mutually_exclusive_group(required=True)
+    group.add_argument("-n", "--name", help='Launch name')
+    group.add_argument("-j", "--json-file", type=argparse.FileType('rw+'),
         help="Specify JSON data file to use")
-    ap.add_argument("-d", "--launch_date", help="Launch date for new launches (yy-mm-dd).")
+    ap.add_argument("-d", "--launch_date",
+        help="Launch date for new launches (yy-mm-dd).")
     try:
         args = vars(ap.parse_args())
     except IOError:
