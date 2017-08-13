@@ -26,6 +26,7 @@ void setup()
     pinMode(MICROPHONE_PIN, INPUT);
     pinMode(BLUE_LED_PIN, OUTPUT);
     pinMode(GREEN_LED_PIN, OUTPUT);
+    pinMode(DETONATION_RELAY_PIN, OUTPUT);
     accelgyro.initialize();
     setCalibratedOffsets();  // set MPU6050 offsets
 
@@ -42,72 +43,18 @@ void setup()
 void loop()
 {
 
-    for (int i = 0; i < N_SAMPLES_PER_MEASUREMENT; i++)
-    {
-        // collect readings from hardware
-        accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-        temperature = accelgyro.getTemperature();
-        microphone  = analogRead(MICROPHONE_PIN);
+    loopTimer = millis();
 
-        // sum sensor readings
-        sumax += ax;
-        sumay += ay;
-        sumaz += az;
-        sumgx += gx;
-        sumgy += gy;
-        sumgz += gz;
-        sumTemperature += temperature;
-
-        // if current microphone reading is greater than or less than
-        // max or min, respectively, replace those values
-        if (microphone < MAXIMUM_ANALOG_IN_VALUE)  // reject impossible samples
-        {
-            if (microphone > maxMicSample)
-                maxMicSample = microphone;
-            else if (microphone < minMicSample)
-                minMicSample = microphone;
-        }
-
-    }
-
-    // average and apply accelerometer scale from datasheet
-    asx = (sumax / N_SAMPLES_PER_MEASUREMENT) / accelScale;
-    asy = (sumay / N_SAMPLES_PER_MEASUREMENT) / accelScale;
-    asz = (sumaz / N_SAMPLES_PER_MEASUREMENT) / accelScale;
-
-    // average and apply gyro scale from datasheet
-    gsx = (sumgx / N_SAMPLES_PER_MEASUREMENT) / gyroScale;
-    gsy = (sumgy / N_SAMPLES_PER_MEASUREMENT) / gyroScale;
-    gsz = (sumgz / N_SAMPLES_PER_MEASUREMENT) / gyroScale;
-
-    // compute average temperature and microphone sample difference
-    tempAvg  = double(sumTemperature) / double(N_SAMPLES_PER_MEASUREMENT);
-    micDiff  = maxMicSample - minMicSample;
-    micVolts = (micDiff * 5.0) / MAXIMUM_ANALOG_IN_VALUE;  // convert to volts
-
-    // TODO: remove this for fun
-    if (micVolts > 1.0)
-    {
-        digitalWrite(BLUE_LED_PIN, HIGH);
-        digitalWrite(GREEN_LED_PIN, LOW);
-    }
-    else
-    {
-        digitalWrite(BLUE_LED_PIN, LOW);
-        digitalWrite(GREEN_LED_PIN, HIGH);
-    }
-
-    // reset sums
-    sumax = 0; sumay = 0; sumaz = 0;
-    sumgx = 0; sumgy = 0; sumgz = 0;
-    sumTemperature = 0;
-    maxMicSample = 0;
-    minMicSample = MAXIMUM_ANALOG_IN_VALUE;
+    // collect readings from hardware
+    accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+    temperature = accelgyro.getTemperature();
+    microphone  = getMicrophoneAmplitude();
+    timestamp   = millis();  // timestamp
 
     // determine timestep for integration
     timePrev = time;
     time     = millis();
-    timeStep = (time - timePrev) / 1000; // convert timestep to seconds
+    timeStep = double(time - timePrev) / 1000; // convert timestep to seconds
 
     // integration of gyroscopic angular acceleration values
     if (!firstRun)
@@ -117,66 +64,31 @@ void loop()
         grz = grz + (timeStep * gsz);
     }
 
-    if (SERIAL && PRINT_SENSOR_VALUES)
-    {
-        Serial.print("A:\t");
-        Serial.print(String(asx) + "\t");
-        Serial.print(String(asy) + "\t");
-        Serial.print(String(asz) + "\t\t");
-        Serial.print("G:\t");
-        Serial.print(String(grx) + "\t");
-        Serial.print(String(gry) + "\t");
-        Serial.print(String(grz) + "\t\t");
-        Serial.print("T:\t");
-        Serial.print(String(tempAvg) + "\t");
-        Serial.print("M:\t");
-        Serial.print(String(micVolts) + "V");
-        Serial.println();
-    }
+    printSensorValues();  // if desired
 
-    // check if we should deploy parachute
-    if (asz < DEPLOY_IF_Z_ACCEL_LESS_THAN)
-    {
-        if (SERIAL && PRINT_CHUTE_STATUS)
-            Serial.println("Rocket is falling!");
-
-        if (fallCounter == 0)
-            timeStartFall = millis();
-        
-        if (millis() - timeStartFall > FALL_TIME_REQ_PRE_DEPLOY)
-            deployChute = true;
-
-        fallCounter++;
-    }
-    else
-        fallCounter = 0;
-
-    // logic to deploy the parachute
-    if (deployChute)
-    {
-        if (SERIAL && PRINT_CHUTE_STATUS)
-            Serial.println("Deploying parachute!");
-
-        // TODO: add logic to turn servo motor and deploy parachute
-    }
-
-    writeToLog(ax, ay, az,  // rot from acceleration
+    writeToLog(timestamp, 
+               ax, ay, az,     // rot from acceleration
                grx, gry, grz,  // rot from gyro
-               tempAvg, micVolts);
+               temperature, microphone);
+
+    if (PRINT_LOOP_TIMER)
+        Serial.println("loop timer: " + String(millis()-loopTimer) + " ms");
 
     if (firstRun) firstRun = false;
-
+    
 }
 
 // Write data to logfile on SD card
-int writeToLog(float ax, float ay, float az, 
-               float gx, float gy, float gz, 
-               float temp, float mic)
+int writeToLog(uint32_t ts,
+                float ax, float ay, float az, 
+                float gx, float gy, float gz, 
+                float temp, float mic)
 {
 
-    String strLine = String(ax)+",\t" + String(ay)+",\t" + String(az)+",\t" + 
-                     String(gx)+",\t" + String(gy)+",\t" + String(gz)+",\t" + 
-                     String(temp)+",\t" + String(mic);
+    String strLine = String(ts)+",\t"+
+                        String(ax)+",\t" + String(ay)+",\t" + String(az)+",\t" + 
+                        String(gx)+",\t" + String(gy)+",\t" + String(gz)+",\t" + 
+                        String(temp)+",\t" + String(mic);
 
     logFile.println(strLine);  // log to file
     
@@ -243,5 +155,59 @@ void initializeSDLogging()
     // turn the logNumber into a fileName and open it to log to
     if (logNumber > 0)
         logFileName = "log_" + String(logNumber) + ".txt";
+
+}
+
+// Print values from sensors to Serial console
+void printSensorValues()
+{
+
+    if (SERIAL && PRINT_SENSOR_VALUES)
+    {
+        Serial.print("A:\t");
+        Serial.print(String(asx) + "\t");
+        Serial.print(String(asy) + "\t");
+        Serial.print(String(asz) + "\t\t");
+        Serial.print("G:\t");
+        Serial.print(String(grx) + "\t");
+        Serial.print(String(gry) + "\t");
+        Serial.print(String(grz) + "\t\t");
+        Serial.print("T:\t");
+        Serial.print(String(temperature) + "\t");
+        Serial.print("M:\t");
+        Serial.print(String(microphone) + "V");
+        Serial.println();
+    }
+
+}
+
+// calculate amplitude of sampled sound
+double getMicrophoneAmplitude()
+{
+
+    // reset dynamic variables
+    minMicSample = 1024;
+    maxMicSample = 0;
+
+    for (m = 0; m < N_ITERS_MIC_SAMPLE; m++)
+    {
+
+        sample = analogRead(MICROPHONE_PIN);
+
+        // if current microphone reading is greater than or less than
+        // max or min, respectively, replace those values
+        if (sample < MAXIMUM_ANALOG_IN_VALUE)  // reject impossible samples
+        {
+            if (sample > maxMicSample)
+                maxMicSample = sample;
+            else if (sample < minMicSample)
+                minMicSample = sample;
+        }
+
+    }
+
+    // compute sound amplitude in volts
+    micDiff = double(maxMicSample - minMicSample);
+    return (micDiff * 5.0) / MAXIMUM_ANALOG_IN_VALUE;  // convert to volts
 
 }

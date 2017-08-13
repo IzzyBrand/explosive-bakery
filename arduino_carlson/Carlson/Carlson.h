@@ -9,9 +9,9 @@
 #include "MPU6050.h"
 #include "Wire.h"
 
-#define SERIAL true               // instantiate serial connection
-#define PRINT_SENSOR_VALUES true  // print MPU6050 sensor values to serial
-#define PRINT_CHUTE_STATUS false  // output status of parachute
+#define SERIAL true                // instantiate serial connection
+#define PRINT_SENSOR_VALUES false  // print MPU6050 sensor values to serial
+#define PRINT_LOOP_TIMER false     // print how long sampling loop is taking to complete
 
 // MPU6050 Calibration Offsets
 // Determined using CalibrateMPU6050 script
@@ -23,37 +23,36 @@
 #define OFFSET_GYRO_Z  23
 
 // Hardware and processing definitions
-#define N_SAMPLES_PER_MEASUREMENT 20    // how many measurement iters to avg
 #define N_ITERS_BEFORE_FLUSH      20     // # of loops before data is flushed
 #define MICROPHONE_PIN            A0     // mic input pin on arduino
 #define BLUE_LED_PIN              8      // blue led
 #define GREEN_LED_PIN             9      // green led
+#define DETONATION_RELAY_PIN      5      // chute detonation relay
 #define CHIP_SELECT_PIN           10     // SD card logger chip select (CS) pin
 #define BAUD_RATE                 9600   // serial port baud rate
+#define N_ITERS_MIC_SAMPLE        40     // # of iters to sample mic over
 #define MAXIMUM_ANALOG_IN_VALUE   1024   // maximum analog input value
-
-// Chute deployment Z acceleration vector threshold
-#define DEPLOY_IF_Z_ACCEL_LESS_THAN -0.9  // (G-force) (neg. bc inversion)
-#define FALL_TIME_REQ_PRE_DEPLOY    3000  // (ms) min freefall time req. in 
-                                          // less than -0.9G before chute is
-                                          // deployed
 
 // MPU6050-specific variables
 MPU6050 accelgyro;
 int16_t ax, ay, az, gx, gy, gz;  // raw accel / gyro values
 int16_t temperature;
-int16_t microphone;
+double  microphone;
 
 // Computed variables
-double timeStep, time, timePrev;
-float micDiff, micVolts, tempAvg;
+uint32_t loopTimer;  // check computation time
+uint32_t timestamp;  // timestamp of sample data point
+uint32_t time, timePrev;
+double timeStep;
+float micDiff, micVolts;
 double asx, asy, asz, gsx, gsy, gsz;  // scaled
 double arx, ary, arz, grx, gry, grz, rx, ry, rz;  // rotation
 
-// Sum variables to help compute sample averages
-int32_t sumTemperature = 0;
-int     minMicSample   = 1024;
-int     maxMicSample   = 0;
+// Additional helper variables
+int     m            = 0;
+int16_t sample       = 0;
+int     minMicSample = 1024;
+int     maxMicSample = 0;
 int32_t sumax = 0, sumay = 0, sumaz = 0, sumgx = 0, sumgy = 0, sumgz = 0;
 
 // Counters and booleans
@@ -75,10 +74,15 @@ File incrementFile;
 File logFile;
 
 // Functions
-void setup();
-void loop();
-int writeToLog(float ax, float ay, float az, float gx, float gy, float gz, float temp, float mic);
-void setCalibratedOffsets();
-void initializeSDLogging();
+void    setup();
+void    loop();
+int     writeToLog(uint32_t ts,
+    float ax, float ay, float az, 
+    float gx, float gy, float gz, 
+    float temp, float mic);
+void    setCalibratedOffsets();
+void    initializeSDLogging();
+void    printSensorValues();
+double  getMicrophoneAmplitude();
 
 #endif  // CARLSON
