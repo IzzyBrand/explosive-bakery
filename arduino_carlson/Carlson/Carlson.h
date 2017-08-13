@@ -10,9 +10,9 @@
 #include "Wire.h"
 
 #define SERIAL true                // instantiate serial connection
-#define PRINT_SENSOR_VALUES false  // print MPU6050 sensor values to serial
-#define PRINT_CHUTE_DEPLOY true   // indicate that chute was deployed
-#define PRINT_LOOP_TIMER false     // print how long sampling loop is taking to complete
+#define PRINT_SENSOR_VALUES true   // print MPU6050 sensor values to serial
+#define PRINT_CHUTE_DEPLOY  true   // indicate that chute was deployed
+#define PRINT_LOOP_TIMER    false  // print how long sampling loop is taking to complete
 
 // MPU6050 Calibration Offsets
 // Determined using CalibrateMPU6050 script
@@ -75,7 +75,7 @@ double accelScale   = 1.0/16384;  // from datasheet
 double gyroScale    = 1.0/131;    // from datasheet
 
 // Chute deployment
-int deployCounter = 0;  // a counter to make sure we don't reset timeStartFall
+int deployCounter     = 0;  // a counter to make sure we don't reset timeStartFall
 volatile int pwmValue = 0;
 volatile int prevTime = 0;
 
