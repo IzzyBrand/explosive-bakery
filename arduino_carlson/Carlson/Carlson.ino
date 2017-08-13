@@ -23,7 +23,13 @@ void setup()
     pinMode(MICROPHONE_PIN, INPUT);
     pinMode(BLUE_LED_PIN, OUTPUT); digitalWrite(BLUE_LED_PIN, LOW);
     pinMode(GREEN_LED_PIN, OUTPUT);
-    pinMode(DETONATION_RELAY_PIN, OUTPUT);
+    pinMode(RELAY_DETONATION_PIN, OUTPUT);
+    // pinMode(RELAY_INTERRUPT_PIN, INPUT);
+
+    // attach interrupt for manual relay trigger from RC
+    // when digital pin goes high, call the rising function
+    attachInterrupt(digitalPinToInterrupt(RELAY_INTERRUPT_PIN), rising, RISING);
+
     accelgyro.initialize();
     setCalibratedOffsets();  // set MPU6050 offsets
 
@@ -38,16 +44,18 @@ void setup()
         Serial.println("Carlson initialization successful.");
 
     // don't fire the chute ejection charge!
-    digitalWrite(DETONATION_RELAY_PIN, LOW);  // OFF
+    digitalWrite(RELAY_DETONATION_PIN, LOW);  // OFF
     
     // turn blue LED solid to indicate that Carlson is ready to 
     // arm and launch
-    if (digitalRead(DETONATION_RELAY_PIN) != LOW)  // double check
+    if (digitalRead(RELAY_DETONATION_PIN) != LOW)  // double check
         blinkError();
-    digitalWrite(BLUE_LED_PIN, HIGH);
 
     // update flight flags
     flightFlag = FLAG_DEFAULT;
+
+    // do arming blink and wait for RC transmitter to go mid-range PWM
+    blockUntilManualChuteTriggerReady();
 
     delay(1);
 
@@ -91,7 +99,7 @@ void loop()
 
     checkForChuteDeploy();  // deploy chute if it's time
 
-    writeToLog(timestamp, 
+    writeToCard(timestamp, 
                ax, ay, az,     // rot from acceleration
                grx, gry, grz,  // rot from gyro
                temperature, microphone,
@@ -105,11 +113,13 @@ void loop()
 }
 
 // Write data to logfile on SD card
-int writeToLog(uint32_t ts,
+int writeToCard(uint32_t ts,
                 float ax, float ay, float az, 
                 float gx, float gy, float gz, 
                 float temp, float mic, int flag)
 {
+
+    digitalWrite(GREEN_LED_PIN, LOW);  // flush counter off
 
     String strLine = String(ts)+",\t"+
                         String(asx)+",\t" + String(asy)+",\t" + String(asz)+",\t" + 
@@ -122,6 +132,7 @@ int writeToLog(uint32_t ts,
         // to increase speed, we only flush to file once every N_ITERS_BEFORE_FLUSH loops
         logFile.flush();
         flushCounter = 0;
+        digitalWrite(GREEN_LED_PIN, HIGH);  // visualize flush
     }
     
     flushCounter += 1;
@@ -244,14 +255,22 @@ double getMicrophoneAmplitude()
 void checkForChuteDeploy()
 {
 
-    // TODO: add logic here
+    // check for autonomous chute deploy
+    // TODO ...
 
-    if (millis() > 25000)
+    // check for manual chute deploy
+    if (pwmValue > CHUTE_TRIGGER_PWM)
     {
-        //flightFlag += FLAG_CARLSON_CHUTE_DEPLOY;
-
-        if (SERIAL && PRINT_CHUTE_DEPLOY)
-            Serial.println("Chute deployed");   
+        digitalWrite(RELAY_DETONATION_PIN, HIGH);  // close relay
+        if (deployCounter == 0)
+            flightFlag += FLAG_CARLSON_CHUTE_DEPLOY;  
+        Serial.println("DEPLOYING CHUTE");
+        deployCounter++;
+    }
+    else
+    {
+        // allow manual deploy to be canceled
+        digitalWrite(RELAY_DETONATION_PIN, LOW);  // open relay
     }
 
 }
@@ -265,4 +284,52 @@ void blinkError()
         digitalWrite(BLUE_LED_PIN, LOW);
         delay(ERROR_BLINK_DELAY);
     }
+}
+
+void blockUntilManualChuteTriggerReady()
+{
+
+    if (SERIAL)
+        Serial.println("Ready to arm\nMove RC input to MIDDLE position");
+
+    while(pwmValue < CHUTE_ARM_PWM-100 || pwmValue > CHUTE_ARM_PWM+100)
+    {
+        digitalWrite(BLUE_LED_PIN, HIGH);
+        delay(ARM_READY_BLINK_DELAY);
+        digitalWrite(BLUE_LED_PIN, LOW);
+        delay(ARM_READY_BLINK_DELAY);
+    }
+
+    if (SERIAL)
+        Serial.println("Move RC input to OFF position");    
+
+    while(pwmValue > CHUTE_OFF_PWM)
+    {
+        digitalWrite(BLUE_LED_PIN, HIGH);
+        delay(ARM_READY_BLINK_DELAY);
+        digitalWrite(BLUE_LED_PIN, LOW);
+        delay(ARM_READY_BLINK_DELAY);
+    }
+    
+    if (SERIAL)
+        Serial.println("Relay is ARMED");
+
+    digitalWrite(BLUE_LED_PIN, HIGH);
+
+}
+
+// get PWM value from interrupt pin connected to RF receiver
+void rising() 
+{
+
+    attachInterrupt(digitalPinToInterrupt(RELAY_INTERRUPT_PIN), falling, FALLING);
+    prevTime = micros();
+
+}
+void falling()
+{
+
+    attachInterrupt(digitalPinToInterrupt(RELAY_INTERRUPT_PIN), rising, RISING);
+    pwmValue = micros() - prevTime;
+
 }

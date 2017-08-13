@@ -10,8 +10,8 @@
 #include "Wire.h"
 
 #define SERIAL true                // instantiate serial connection
-#define PRINT_SENSOR_VALUES true  // print MPU6050 sensor values to serial
-#define PRINT_CHUTE_DEPLOY false   // indicate that chute was deployed
+#define PRINT_SENSOR_VALUES false  // print MPU6050 sensor values to serial
+#define PRINT_CHUTE_DEPLOY true   // indicate that chute was deployed
 #define PRINT_LOOP_TIMER false     // print how long sampling loop is taking to complete
 
 // MPU6050 Calibration Offsets
@@ -28,8 +28,13 @@
 #define MICROPHONE_PIN            A0     // mic input pin on arduino
 #define BLUE_LED_PIN              8      // blue led
 #define GREEN_LED_PIN             9      // green led
-#define ERROR_BLINK_DELAY         200    // blink delay in ms if we have an error
-#define DETONATION_RELAY_PIN      5      // chute detonation relay
+#define ERROR_BLINK_DELAY         50     // blink delay in ms if card error
+#define ARM_READY_BLINK_DELAY     500    // blink delay in ms if ready to arm
+#define RELAY_DETONATION_PIN      5      // chute detonation relay
+#define RELAY_INTERRUPT_PIN       7      // interupt pin for manual relay trigger
+#define CHUTE_TRIGGER_PWM         1800   // PWM value above which to trigger chute
+#define CHUTE_ARM_PWM             1500   // PWM value for arming chute relay
+#define CHUTE_OFF_PWM             1200   // PWM value for off position
 #define CHIP_SELECT_PIN           10     // SD card logger chip select (CS) pin
 #define BAUD_RATE                 9600   // serial port baud rate
 #define N_ITERS_MIC_SAMPLE        40     // # of iters to sample mic over
@@ -64,15 +69,15 @@ int     maxMicSample = 0;
 int32_t sumax = 0, sumay = 0, sumaz = 0, sumgx = 0, sumgy = 0, sumgz = 0;
 
 // Counters and booleans
-bool firstRun     = true;   // is this the first loop of the code?
-int flushCounter  = 0;      // number of loops after last flush
-double accelScale = 1.0/16384;  // from datasheet
-double gyroScale  = 1.0/131;    // from datasheet
+bool   firstRun     = true;   // is this the first loop of the code?
+int    flushCounter = 0;      // number of loops after last flush
+double accelScale   = 1.0/16384;  // from datasheet
+double gyroScale    = 1.0/131;    // from datasheet
 
-// Chute deployment specific
-bool deployChute     = false;  // should we deploy the parachute?
-int fallCounter      = 0;      // a counter to make sure we don't reset timeStartFall
-double timeStartFall = 0;      // when did the rocket start falling?
+// Chute deployment
+int deployCounter = 0;  // a counter to make sure we don't reset timeStartFall
+volatile int pwmValue = 0;
+volatile int prevTime = 0;
 
 // Saving and incrementing data logfiles
 int logNumber            = 0;  // stores number read from incrementFile
@@ -84,7 +89,8 @@ File logFile;
 // Functions
 void    setup();
 void    loop();
-int     writeToLog(uint32_t ts,
+int     writeToCard(
+    uint32_t ts,
     float ax, float ay, float az, 
     float gx, float gy, float gz, 
     float temp, float mic);
@@ -94,5 +100,8 @@ void    printSensorValues();
 double  getMicrophoneAmplitude();
 void    checkForChuteDeploy();
 void    blinkError();
+void    blockUntilManualChuteTriggerReady();
+void    rising();
+void    falling();
 
 #endif  // CARLSON
