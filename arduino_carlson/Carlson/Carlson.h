@@ -10,7 +10,8 @@
 #include "Wire.h"
 
 #define SERIAL true                // instantiate serial connection
-#define PRINT_SENSOR_VALUES false  // print MPU6050 sensor values to serial
+#define PRINT_SENSOR_VALUES true  // print MPU6050 sensor values to serial
+#define PRINT_CHUTE_DEPLOY false   // indicate that chute was deployed
 #define PRINT_LOOP_TIMER false     // print how long sampling loop is taking to complete
 
 // MPU6050 Calibration Offsets
@@ -27,17 +28,24 @@
 #define MICROPHONE_PIN            A0     // mic input pin on arduino
 #define BLUE_LED_PIN              8      // blue led
 #define GREEN_LED_PIN             9      // green led
+#define ERROR_BLINK_DELAY         200    // blink delay in ms if we have an error
 #define DETONATION_RELAY_PIN      5      // chute detonation relay
 #define CHIP_SELECT_PIN           10     // SD card logger chip select (CS) pin
 #define BAUD_RATE                 9600   // serial port baud rate
 #define N_ITERS_MIC_SAMPLE        40     // # of iters to sample mic over
 #define MAXIMUM_ANALOG_IN_VALUE   1024   // maximum analog input value
 
+// Carlson bit-mapped flag definitions
+#define FLAG_DEFAULT              0  // default (boot/takeoff/flying)
+#define FLAG_CARLSON_CHUTE_DEPLOY 1  // Carlson deployed chute
+#define FLAG_MANUAL_CHUTE_DEPLOY  2  // manual RC deployed chute
+
 // MPU6050-specific variables
 MPU6050 accelgyro;
 int16_t ax, ay, az, gx, gy, gz;  // raw accel / gyro values
 int16_t temperature;
 double  microphone;
+int     flightFlag;
 
 // Computed variables
 uint32_t loopTimer;  // check computation time
@@ -58,8 +66,8 @@ int32_t sumax = 0, sumay = 0, sumaz = 0, sumgx = 0, sumgy = 0, sumgz = 0;
 // Counters and booleans
 bool firstRun     = true;   // is this the first loop of the code?
 int flushCounter  = 0;      // number of loops after last flush
-double gyroScale  = 131;    // from datasheet
-double accelScale = 16384;  // from datasheet
+double accelScale = 1.0/16384;  // from datasheet
+double gyroScale  = 1.0/131;    // from datasheet
 
 // Chute deployment specific
 bool deployChute     = false;  // should we deploy the parachute?
@@ -81,8 +89,10 @@ int     writeToLog(uint32_t ts,
     float gx, float gy, float gz, 
     float temp, float mic);
 void    setCalibratedOffsets();
-void    initializeSDLogging();
+bool    initializeSDLogging();
 void    printSensorValues();
 double  getMicrophoneAmplitude();
+void    checkForChuteDeploy();
+void    blinkError();
 
 #endif  // CARLSON

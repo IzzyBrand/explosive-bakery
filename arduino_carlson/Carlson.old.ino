@@ -149,7 +149,7 @@ void loop()
         // TODO: add logic to turn servo motor and deploy parachute
     }
 
-    writeToLog(ax, ay, az,  // rot from acceleration
+    writeToLog(asx, asy, asz,  // rot from acceleration
                grx, gry, grz,  // rot from gyro
                tempAvg, micVolts);
 
