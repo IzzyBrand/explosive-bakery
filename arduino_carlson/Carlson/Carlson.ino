@@ -19,21 +19,43 @@ void setup()
     Wire.begin();
     time = millis();
 
-    // initialize SD card logging
-    initializeSDLogging();
-
     // initialize arduino hardware
     pinMode(MICROPHONE_PIN, INPUT);
-    pinMode(BLUE_LED_PIN, OUTPUT);
+    pinMode(BLUE_LED_PIN, OUTPUT); digitalWrite(BLUE_LED_PIN, LOW);
     pinMode(GREEN_LED_PIN, OUTPUT);
+    pinMode(RELAY_DETONATION_PIN, OUTPUT);
+    // pinMode(RELAY_INTERRUPT_PIN, INPUT);
+
+    // attach interrupt for manual relay trigger from RC
+    // when digital pin goes high, call the rising function
+    attachInterrupt(digitalPinToInterrupt(RELAY_INTERRUPT_PIN), rising, RISING);
+
     accelgyro.initialize();
     setCalibratedOffsets();  // set MPU6050 offsets
+
+    // initialize SD card logging
+    if (!initializeSDLogging())
+        blinkError();  // initialization failed!
 
     // open logfile
     logFile = SD.open(logFileName, FILE_WRITE);
 
     if (SERIAL)
         Serial.println("Carlson initialization successful.");
+
+    // don't fire the chute ejection charge!
+    digitalWrite(RELAY_DETONATION_PIN, LOW);  // OFF
+    
+    // turn blue LED solid to indicate that Carlson is ready to 
+    // arm and launch
+    if (digitalRead(RELAY_DETONATION_PIN) != LOW)  // double check
+        blinkError();
+
+    // update flight flags
+    flightFlag = FLAG_DEFAULT;
+
+    // do arming blink and wait for RC transmitter to go mid-range PWM
+    blockUntilManualChuteTriggerReady();
 
     delay(1);
 
@@ -42,72 +64,28 @@ void setup()
 void loop()
 {
 
-    for (int i = 0; i < N_SAMPLES_PER_MEASUREMENT; i++)
-    {
-        // collect readings from hardware
-        accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-        temperature = accelgyro.getTemperature();
-        microphone  = analogRead(MICROPHONE_PIN);
+    loopTimer = millis();
 
-        // sum sensor readings
-        sumax += ax;
-        sumay += ay;
-        sumaz += az;
-        sumgx += gx;
-        sumgy += gy;
-        sumgz += gz;
-        sumTemperature += temperature;
-
-        // if current microphone reading is greater than or less than
-        // max or min, respectively, replace those values
-        if (microphone < MAXIMUM_ANALOG_IN_VALUE)  // reject impossible samples
-        {
-            if (microphone > maxMicSample)
-                maxMicSample = microphone;
-            else if (microphone < minMicSample)
-                minMicSample = microphone;
-        }
-
-    }
-
-    // average and apply accelerometer scale from datasheet
-    asx = (sumax / N_SAMPLES_PER_MEASUREMENT) / accelScale;
-    asy = (sumay / N_SAMPLES_PER_MEASUREMENT) / accelScale;
-    asz = (sumaz / N_SAMPLES_PER_MEASUREMENT) / accelScale;
-
-    // average and apply gyro scale from datasheet
-    gsx = (sumgx / N_SAMPLES_PER_MEASUREMENT) / gyroScale;
-    gsy = (sumgy / N_SAMPLES_PER_MEASUREMENT) / gyroScale;
-    gsz = (sumgz / N_SAMPLES_PER_MEASUREMENT) / gyroScale;
-
-    // compute average temperature and microphone sample difference
-    tempAvg  = double(sumTemperature) / double(N_SAMPLES_PER_MEASUREMENT);
-    micDiff  = maxMicSample - minMicSample;
-    micVolts = (micDiff * 5.0) / MAXIMUM_ANALOG_IN_VALUE;  // convert to volts
-
-    // TODO: remove this for fun
-    if (micVolts > 1.0)
-    {
-        digitalWrite(BLUE_LED_PIN, HIGH);
-        digitalWrite(GREEN_LED_PIN, LOW);
-    }
-    else
-    {
-        digitalWrite(BLUE_LED_PIN, LOW);
-        digitalWrite(GREEN_LED_PIN, HIGH);
-    }
-
-    // reset sums
-    sumax = 0; sumay = 0; sumaz = 0;
-    sumgx = 0; sumgy = 0; sumgz = 0;
-    sumTemperature = 0;
-    maxMicSample = 0;
-    minMicSample = MAXIMUM_ANALOG_IN_VALUE;
+    // collect readings from hardware
+    // NOTE: due to rocket orientation, the MPU's x and z axes
+    //       are switched
+    accelgyro.getMotion6(&az, &ay, &ax, &gz, &gy, &gx);
+    temperature = accelgyro.getTemperature();
+    microphone  = getMicrophoneAmplitude();
+    timestamp   = millis();  // timestamp
 
     // determine timestep for integration
     timePrev = time;
     time     = millis();
-    timeStep = (time - timePrev) / 1000; // convert timestep to seconds
+    timeStep = double(time - timePrev) * 0.001; // convert timestep to seconds
+
+    // scale sensor readings
+    asx = ax * accelScale;
+    asy = ay * accelScale;
+    asz = az * accelScale;
+    gsx = gx * gyroScale;
+    gsy = gy * gyroScale;
+    gsz = gz * gyroScale;
 
     // integration of gyroscopic angular acceleration values
     if (!firstRun)
@@ -117,66 +95,36 @@ void loop()
         grz = grz + (timeStep * gsz);
     }
 
-    if (SERIAL && PRINT_SENSOR_VALUES)
-    {
-        Serial.print("A:\t");
-        Serial.print(String(asx) + "\t");
-        Serial.print(String(asy) + "\t");
-        Serial.print(String(asz) + "\t\t");
-        Serial.print("G:\t");
-        Serial.print(String(grx) + "\t");
-        Serial.print(String(gry) + "\t");
-        Serial.print(String(grz) + "\t\t");
-        Serial.print("T:\t");
-        Serial.print(String(tempAvg) + "\t");
-        Serial.print("M:\t");
-        Serial.print(String(micVolts) + "V");
-        Serial.println();
-    }
+    printSensorValues();  // if desired
 
-    // check if we should deploy parachute
-    if (asz < DEPLOY_IF_Z_ACCEL_LESS_THAN)
-    {
-        if (SERIAL && PRINT_CHUTE_STATUS)
-            Serial.println("Rocket is falling!");
+    checkForChuteDeploy();  // deploy chute if it's time
 
-        if (fallCounter == 0)
-            timeStartFall = millis();
-        
-        if (millis() - timeStartFall > FALL_TIME_REQ_PRE_DEPLOY)
-            deployChute = true;
-
-        fallCounter++;
-    }
-    else
-        fallCounter = 0;
-
-    // logic to deploy the parachute
-    if (deployChute)
-    {
-        if (SERIAL && PRINT_CHUTE_STATUS)
-            Serial.println("Deploying parachute!");
-
-        // TODO: add logic to turn servo motor and deploy parachute
-    }
-
-    writeToLog(ax, ay, az,  // rot from acceleration
+    writeToCard(timestamp, 
+               ax, ay, az,     // rot from acceleration
                grx, gry, grz,  // rot from gyro
-               tempAvg, micVolts);
+               temperature, microphone,
+               flightFlag);
+
+    if (PRINT_LOOP_TIMER)
+        Serial.println("loop timer: " + String(millis()-loopTimer) + " ms");
 
     if (firstRun) firstRun = false;
-
+    
 }
 
 // Write data to logfile on SD card
-int writeToLog(float ax, float ay, float az, 
-               float gx, float gy, float gz, 
-               float temp, float mic)
+int writeToCard(uint32_t ts,
+                float ax, float ay, float az, 
+                float gx, float gy, float gz, 
+                float temp, float mic, int flag)
 {
 
-    String strLine = String(ax)+",\t" + String(ay)+",\t" + String(az)+",\t" + 
-                     String(gx)+",\t" + String(gy)+",\t" + String(gz)+",\t" + 
-                     String(temp)+",\t" + String(mic);
+    digitalWrite(GREEN_LED_PIN, LOW);  // flush counter off
+
+    String strLine = String(ts)+",\t"+
+                        String(asx)+",\t" + String(asy)+",\t" + String(asz)+",\t" + 
+                        String(gsx)+",\t" + String(gsy)+",\t" + String(gz)+",\t" + 
+                        String(temp)+",\t" + String(mic)+",\t" + String(flag);
 
     logFile.println(strLine);  // log to file
     
@@ -184,6 +132,7 @@ int writeToLog(float ax, float ay, float az,
         // to increase speed, we only flush to file once every N_ITERS_BEFORE_FLUSH loops
         logFile.flush();
         flushCounter = 0;
+        digitalWrite(GREEN_LED_PIN, HIGH);  // visualize flush
     }
     
     flushCounter += 1;
@@ -211,7 +160,7 @@ void setCalibratedOffsets()
 // is then appended to the in-flight logfile generated by Carlson (i.e. 
 // "LOG_4.txt"). Afterwards, "counter.txt" is closed, and the new logfile is
 // opened and available for writing data.
-void initializeSDLogging()
+bool initializeSDLogging()
 {
 
     // open counterFile and read in the number
@@ -219,10 +168,9 @@ void initializeSDLogging()
     {
         if (SERIAL)
             Serial.println("Card initialization failed!");
-
-        // TODO: make this error more aggressive; fail to lock nose cone
-        return;
+        return false;
     }
+    digitalWrite(BLUE_LED_PIN, HIGH);
     incrementFile = SD.open(incrementFileName);
 
     if (incrementFile)
@@ -243,5 +191,145 @@ void initializeSDLogging()
     // turn the logNumber into a fileName and open it to log to
     if (logNumber > 0)
         logFileName = "log_" + String(logNumber) + ".txt";
+
+    return true;
+
+}
+
+// Print values from sensors to Serial console
+void printSensorValues()
+{
+
+    if (SERIAL && PRINT_SENSOR_VALUES)
+    {
+        Serial.print("A:\t");
+        Serial.print(String(asx) + "\t");
+        Serial.print(String(asy) + "\t");
+        Serial.print(String(asz) + "\t\t");
+        Serial.print("G:\t");
+        Serial.print(String(gsx) + "\t");
+        Serial.print(String(gsy) + "\t");
+        Serial.print(String(gsz) + "\t\t");
+        Serial.print("T:\t");
+        Serial.print(String(temperature) + "\t");
+        Serial.print("M:\t");
+        Serial.print(String(microphone) + "V" + "\t");
+        Serial.print("flag:\t");
+        Serial.print(String(flightFlag));
+        Serial.println();
+    }
+
+}
+
+// calculate amplitude of sampled sound
+double getMicrophoneAmplitude()
+{
+
+    // reset dynamic variables
+    minMicSample = 1024;
+    maxMicSample = 0;
+
+    for (m = 0; m < N_ITERS_MIC_SAMPLE; m++)
+    {
+
+        sample = analogRead(MICROPHONE_PIN);
+
+        // if current microphone reading is greater than or less than
+        // max or min, respectively, replace those values
+        if (sample < MAXIMUM_ANALOG_IN_VALUE)  // reject impossible samples
+        {
+            if (sample > maxMicSample)
+                maxMicSample = sample;
+            else if (sample < minMicSample)
+                minMicSample = sample;
+        }
+
+    }
+
+    // compute sound amplitude in volts
+    micDiff = double(maxMicSample - minMicSample);
+    return (micDiff * 5.0) / MAXIMUM_ANALOG_IN_VALUE;  // convert to volts
+
+}
+
+void checkForChuteDeploy()
+{
+
+    // check for autonomous chute deploy
+    // TODO ...
+
+    // check for manual chute deploy
+    if (pwmValue > CHUTE_TRIGGER_PWM)
+    {
+        digitalWrite(RELAY_DETONATION_PIN, HIGH);  // close relay
+        if (deployCounter == 0)
+            flightFlag += FLAG_CARLSON_CHUTE_DEPLOY;  
+        Serial.println("DEPLOYING CHUTE");
+        deployCounter++;
+    }
+    else
+    {
+        // allow manual deploy to be canceled
+        digitalWrite(RELAY_DETONATION_PIN, LOW);  // open relay
+    }
+
+}
+
+void blinkError()
+{
+    for (;;)
+    {
+        digitalWrite(BLUE_LED_PIN, HIGH);
+        delay(ERROR_BLINK_DELAY);
+        digitalWrite(BLUE_LED_PIN, LOW);
+        delay(ERROR_BLINK_DELAY);
+    }
+}
+
+void blockUntilManualChuteTriggerReady()
+{
+
+    if (SERIAL)
+        Serial.println("Ready to arm\nMove RC input to MIDDLE position");
+
+    while(pwmValue < CHUTE_ARM_PWM-100 || pwmValue > CHUTE_ARM_PWM+100)
+    {
+        digitalWrite(BLUE_LED_PIN, HIGH);
+        delay(ARM_READY_BLINK_DELAY);
+        digitalWrite(BLUE_LED_PIN, LOW);
+        delay(ARM_READY_BLINK_DELAY);
+    }
+
+    if (SERIAL)
+        Serial.println("Move RC input to OFF position");    
+
+    while(pwmValue > CHUTE_OFF_PWM)
+    {
+        digitalWrite(BLUE_LED_PIN, HIGH);
+        delay(ARM_READY_BLINK_DELAY);
+        digitalWrite(BLUE_LED_PIN, LOW);
+        delay(ARM_READY_BLINK_DELAY);
+    }
+    
+    if (SERIAL)
+        Serial.println("Relay is ARMED");
+
+    digitalWrite(BLUE_LED_PIN, HIGH);
+
+}
+
+// get PWM value from interrupt pin connected to RF receiver
+void rising() 
+{
+
+    attachInterrupt(digitalPinToInterrupt(RELAY_INTERRUPT_PIN), falling, FALLING);
+    prevTime = micros();
+
+}
+void falling()
+{
+
+    attachInterrupt(digitalPinToInterrupt(RELAY_INTERRUPT_PIN), rising, RISING);
+    pwmValue = micros() - prevTime;
 
 }
