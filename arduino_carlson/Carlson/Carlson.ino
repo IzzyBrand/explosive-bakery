@@ -100,8 +100,8 @@ void loop()
     checkForChuteDeploy();  // deploy chute if it's time
 
     writeToCard(timestamp, 
-               ax, ay, az,     // rot from acceleration
-               grx, gry, grz,  // rot from gyro
+               asx, asy, asz,     // rot from acceleration
+               gsx, gsy, gsz,  // rot from gyro
                temperature, microphone,
                flightFlag);
 
@@ -114,16 +114,16 @@ void loop()
 
 // Write data to logfile on SD card
 int writeToCard(uint32_t ts,
-                float ax, float ay, float az, 
-                float gx, float gy, float gz, 
+                float accelX, float accelY, float accelZ, 
+                float gyroX, float gyroY, float gyroZ, 
                 float temp, float mic, int flag)
 {
 
     digitalWrite(GREEN_LED_PIN, LOW);  // flush counter off
 
     String strLine = String(ts)+",\t"+
-                        String(asx)+",\t" + String(asy)+",\t" + String(asz)+",\t" + 
-                        String(gsx)+",\t" + String(gsy)+",\t" + String(gz)+",\t" + 
+                        String(accelX)+",\t" + String(accelY)+",\t" + String(accelZ)+",\t" + 
+                        String(gyroX)+",\t" + String(gyroY)+",\t" + String(gyroZ)+",\t" + 
                         String(temp)+",\t" + String(mic)+",\t" + String(flag);
 
     logFile.println(strLine);  // log to file

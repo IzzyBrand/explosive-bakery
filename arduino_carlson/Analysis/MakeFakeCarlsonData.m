@@ -30,8 +30,7 @@ for t = 1:nTics
     % TODO: make this simulate rocket thrusting with slight horizontal
     % deviations, but very minimal (maybe smooth them and add them in after
     % to simulate drift?)
-    % NOTE: X and Z are swapped due to MPU orientation
-    accel  = [rand*thrustG rand-.5 rand-.5];
+    accel  = [rand-.5 rand-.5 rand*thrustG];
     
     % TODO: add slight gyro drift, add gyro flip once apogee is reached
     % (thrust stops and fall starts)
