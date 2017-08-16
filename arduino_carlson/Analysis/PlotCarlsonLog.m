@@ -10,12 +10,13 @@ filename = sprintf('LOG_%02d.txt',n);
 data     = csvread(filename);    % load data
 
 % extract all data
-timestamp   = data(:,1);
-accel       = data(:,[4 3 2]);  % switch X and Z values
-gyro        = data(:,[7 6 5]);  % switch X and Z values
-temperature = data(:,8);
-microphone  = data(:,9);
-flags       = data(:,10);
+startIdx = 3000;  % define this in post
+timestamp   = data(startIdx:end,1);
+accel       = data(startIdx:end,[2 3 4]);  % switch X and Z values
+gyro        = data(startIdx:end,[5 6 7]);  % switch X and Z values
+temperature = data(startIdx:end,8);
+microphone  = data(startIdx:end,9);
+flags       = data(startIdx:end,10);
 
 % plotting data
 h = figure;
@@ -25,13 +26,13 @@ window = 100;  % smoothing Gaussian window size
 
 %% Plot Acceleration (accelerometer)
 % Raw
-if false
-    plot(timestamp, accel(:,1));  lbls = [lbls; 'Accel X (G)'];
-    plot(timestamp, accel(:,2));  lbls = [lbls; 'Accel Y (G)'];
-    plot(timestamp, accel(:,3));  lbls = [lbls; 'Accel Z (G)'];
+if true
+%     plot(timestamp, accel(:,1));  lbls = [lbls; 'Accel X (G)'];
+%     plot(timestamp, accel(:,2));  lbls = [lbls; 'Accel Y (G)'];
+%     plot(timestamp, accel(:,3));  lbls = [lbls; 'Accel Z (G)'];
 end
 % Smoothed
-if true
+if false
     plot(timestamp, smsig(accel(:,1),window));  lbls = [lbls; 'Smoothed Accel X (G)'];
     plot(timestamp, smsig(accel(:,2),window));  lbls = [lbls; 'Smoothed Accel Y (G)'];
     plot(timestamp, smsig(accel(:,3),window));  lbls = [lbls; 'Smoothed Accel Z (G)'];
@@ -39,23 +40,23 @@ end
 
 %% Plot Angular Acceleration (gyroscope)
 % Raw
-if false
-    plot(timestamp, accel(:,1));  lbls = [lbls; 'Gyro X (m/s^2)'];
-    plot(timestamp, accel(:,2));  lbls = [lbls; 'Gyro Y (m/s^2)'];
-    plot(timestamp, accel(:,3));  lbls = [lbls; 'Gyro Z (m/s^2)'];
+if true
+    plot(timestamp, gyro(:,1));  lbls = [lbls; 'Gyro X (deg/s^2)'];
+    plot(timestamp, gyro(:,2));  lbls = [lbls; 'Gyro Y (deg/s^2)'];
+    plot(timestamp, gyro(:,3));  lbls = [lbls; 'Gyro Z (deg/s^2)'];
 end
 % Smoothed
 if false
-    plot(timestamp, smsig(accel(:,1),window));  lbls = [lbls; 'Gyro X (m/s^2)'];
-    plot(timestamp, smsig(accel(:,2),window));  lbls = [lbls; 'Gyro Y (m/s^2)'];
-    plot(timestamp, smsig(accel(:,3),window));  lbls = [lbls; 'Gyro Z (m/s^2)'];
+    plot(timestamp, smsig(gyro(:,1),window));  lbls = [lbls; 'Gyro X (deg/s^2)'];
+    plot(timestamp, smsig(gyro(:,2),window));  lbls = [lbls; 'Gyro Y (deg/s^2)'];
+    plot(timestamp, smsig(gyro(:,3),window));  lbls = [lbls; 'Gyro Z (deg/s^2)'];
 end
 
 %% Plot Other Readings (temperature, microphone, chute status)
 % Raw
-if false
-    plot(timestamp, temperature); lbls = [lbls; 'Temperature (?)'];
-    plot(timestamp, microphone);  lbls = [lbls; 'Microphone (Volts)'];
+if true
+%     plot(timestamp, temperature); lbls = [lbls; 'Temperature (?)'];
+%     plot(timestamp, microphone);  lbls = [lbls; 'Microphone (Volts)'];
     plot(timestamp, flags);       lbls = [lbls; 'Flags'];
 end
 % Smoothed
@@ -66,9 +67,9 @@ if false
 end
 
 %% continue
-legend(lbls);
 hold off;
-xlim([0 timestamp(end)]);
+legend(lbls);
+xlim([timestamp(1) timestamp(end)]);
 xlabel('Time (s)');
 
     function sm = smsig(data,windowSize)
