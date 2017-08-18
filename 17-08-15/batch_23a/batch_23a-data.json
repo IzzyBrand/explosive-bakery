@@ -2,7 +2,7 @@
   "date": "17-08-15-20-12-50", 
   "serial_port": "/dev/tty.wchusbserial1410", 
   "baud_rate": 115200, 
-  "rocket_length": 7.0, 
+  "rocket_length": 6.0, 
   "rocket_diameter": 1.0, 
   "rocket_material": "PVC", 
   "rocket_fuel_mass": 0.0, 
@@ -11,7 +11,7 @@
   "nozzle_used": true, 
   "left_endpoint": 248.09000213969816, 
   "right_endpoint": 254.3801647405046, 
-  "filename": "batch_22a-data.json", 
+  "filename": "batch_23a-data.json", 
   "comments": "Pipe bomb", 
   "data": {
     "ms": [
