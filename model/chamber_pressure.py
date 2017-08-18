@@ -33,14 +33,14 @@ M = 1.0
 #     burn_rate = B(pressure)
 #     core_radius += burn_rate * dt
 
-#     chamber_volume = pi * core_radius ** 2 * rocket_length
+#     chamber_volume = pi * core_radius ** 2 * motor_length
 #     # A* calculation
 #     gas_density = pressure / R / T_0
 
 #     burn_term    = R * T_0 * burn_rate / chamber_volume * \
 #                    (fuel_density - gas_density)
 
-#     A_b = pi * core_radius * 2 * rocket_length
+#     A_b = pi * core_radius * 2 * motor_length
     
 #     exhaust_term = pressure * A_star * sqrt(k/(R*T_0)) * \
 #                    (2/(k+1))**exponent

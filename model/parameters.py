@@ -1,18 +1,22 @@
 from numpy import pi
 
-##################### ROCKET PARAMETERS #####################
-total_mass       = 1.6                   # kg     (bad approx)
-rocket_length    = 0.18                  # m      (7 inch)
+#################### ROCKET PARAMETERS ####################
+total_mass       = 1.0                   # kg     (bad approx)
+drag_coefficient = 0.4                   # ()     (approx)
+surface_area	 = 0.002				 # m^2	  (bad approx)
+
+##################### MOTOR PARAMETERS #####################
+
+motor_length     = 0.18                  # m      (7 inch)
 inner_diameter   = 0.025                 # m      (good)
 outer_diameter   = 0.029                 # m      (?)
 core_diameter    = 0.005                 # m      (?)
 inner_radius     = inner_diameter / 2.0  # m
 outer_radius     = outer_diameter / 2.0  # m
 core_radius      = core_diameter  / 2.0  # m
-drag_coefficient = 0.4                   # ()     (approx)
 burn_rate        = 0.1                   # m/s    (bad approx)
 fuel_density     = 1674.213              # kg/m^3 (approx)
-fuel_mass        = pi * fuel_density * rocket_length * \
+fuel_mass        = pi * fuel_density * motor_length * \
                     (inner_radius**2 - core_radius**2)
 burn_temperature = 500.0 # C
 nozzle_diameter  = 0.79375
@@ -29,6 +33,8 @@ lapse_rate      = 0.0065       # m/s
 pressure_ground = 101.325      # kPa
 dry_MM          = 0.0289644    # kg/mol
 ideal_gas_c     = 8.31447      # J/(mol * K)
+air_density     = 1.225 	   # kg/m^2
+gravity			= 9.81
 
 #################### INITIAL CONDITIONS #####################
 initial_time         = 0.0 # s
