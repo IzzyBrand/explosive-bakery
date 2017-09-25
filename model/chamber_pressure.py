@@ -12,17 +12,15 @@ burn_rates = []
 
 
 def B(p):
-    # input N/m^2
+    # input Pa
     # output burn rate (m/s)
-    newp = (14.6959488 * p)
-    print newp
+    newp = (0.000145038 * p)
     br = (0.1494 * (newp ** 0.337)) / 100.
-    print br
     return br
 
 t = initial_time
-dt = 1e-5 # seconds
-pressure = 1. # N/m^2
+dt = 1e-7 # seconds
+pressure = 101325.0 # Pa
 numerator   = 1 + ((k - 1) / 2 * M**2)
 denominator = (1 + (k - 1) / 2)
 exp         = -1 * ((k + 1) / (2 * (k - 1)))
