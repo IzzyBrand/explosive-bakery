@@ -15,11 +15,11 @@ inner_radius     = inner_diameter / 2.0  # m
 outer_radius     = outer_diameter / 2.0  # m
 core_radius      = core_diameter  / 2.0  # m
 burn_rate        = 0.1                   # m/s    (bad approx)
-fuel_density     = 1674.213              # kg/m^3 (approx)
+fuel_density     = 1887.7695             # kg/m^3
 fuel_mass        = pi * fuel_density * motor_length * \
                     (inner_radius**2 - core_radius**2)
-burn_temperature = 500.0 # C
-nozzle_diameter  = 0.79375
+burn_temperature = 1446.85 # C
+nozzle_diameter  = 0.375
 nozzle_area      = pi * (nozzle_diameter / 2)**2
 inlet_area       = inner_radius ** 2 * pi
 outlet_area      = inlet_area
@@ -34,7 +34,7 @@ pressure_ground = 101.325      # kPa
 dry_MM          = 0.0289644    # kg/mol
 ideal_gas_c     = 8.31447      # J/(mol * K)
 air_density     = 1.225 	   # kg/m^2
-gravity			= 9.81
+gravity	    	= 9.81
 
 #################### INITIAL CONDITIONS #####################
 initial_time         = 0.0 # s
@@ -44,5 +44,6 @@ initial_acceleration = 0.0 # m/s^2
 
 total_burn_time = (inner_radius - core_radius) / burn_rate # s
 
-k = 1.1
-M = 1.0
+k = 1.1331 # source http://www.nakka-rocketry.net/techs.html
+M = 0.04198  # kg / mol
+R_effective = ideal_gas_c / M

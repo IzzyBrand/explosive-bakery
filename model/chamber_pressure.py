@@ -12,50 +12,61 @@ burn_rates = []
 
 
 def B(p):
-    # input PSI
-    # output burn rate (cm/s)
-    return (0.165 * (p ** 0.322)) / 100.
+    # input N/m^2
+    # output burn rate (m/s)
+    newp = (14.6959488 * p)
+    print newp
+    br = (0.1494 * (newp ** 0.337)) / 100.
+    print br
+    return br
 
 t = initial_time
-dt = 1e-4 # seconds
-pressure = 14.6959 # PSI
+dt = 1e-5 # seconds
+pressure = 1. # N/m^2
 numerator   = 1 + ((k - 1) / 2 * M**2)
 denominator = (1 + (k - 1) / 2)
 exp         = -1 * ((k + 1) / (2 * (k - 1)))
 exponent = (k + 1) / (2 * (k - 1))
 A_star      = M * nozzle_area * (numerator / denominator) ** exp
-R = ideal_gas_c
+
+R = R_effective
+flag1 = False
+flag2 = False
 T_0 = burn_temperature
-k = 1.1
-M = 1.0
+while core_radius <= inner_radius:
+    if not flag1 and core_radius >= inner_radius / 2:
+        flag1 = True
+        print '1/2 done'
 
-# while core_radius <= inner_radius:
-#     burn_rate = B(pressure)
-#     core_radius += burn_rate * dt
+    if not flag2 and core_radius >= 3*inner_radius / 4:
+        flag2 = True
+        print '3/4 done'
+        
+    burn_rate = B(pressure)
+    core_radius += burn_rate * dt
 
-#     chamber_volume = pi * core_radius ** 2 * motor_length
-#     # A* calculation
-#     gas_density = pressure / R / T_0
+    burn_area = 2 * pi * core_radius * motor_length
+    chamber_volume = pi * core_radius ** 2 * motor_length
 
-#     burn_term    = R * T_0 * burn_rate / chamber_volume * \
-#                    (fuel_density - gas_density)
-
-#     A_b = pi * core_radius * 2 * motor_length
+    gas_density = pressure / R / T_0
+    burn_term = burn_rate * burn_area * (fuel_density - gas_density)
     
-#     exhaust_term = pressure * A_star * sqrt(k/(R*T_0)) * \
-#                    (2/(k+1))**exponent
+    exhaust_term = pressure * A_star * sqrt(k/(R*T_0)) * \
+                   (2/(k+1))**exponent
 
-#     dpdt = burn_term - 0
-#     dp = dpdt * dt
-#     times.append(t)
-#     pressures.append(pressure)
-#     burn_rates.append(burn_rate)
-#     burn_terms.append(burn_term)
-#     exhaust_terms.append(exhaust_term)
-#     pressure += dp
-#     t += dt
+    coeff = R * T_0 / chamber_volume
+    dpdt = coeff * (burn_term - exhaust_term)
+    dp = dpdt * dt
+    times.append(t)
+    pressures.append(pressure)
+    burn_rates.append(burn_rate)
+    burn_terms.append(burn_term)
+    exhaust_terms.append(exhaust_term)
+    pressure += dp
+    t += dt
 
-plt.scatter(times, pressures,     label='Pressure')
+print np.size(pressures)
+plt.plot(times, pressures,     label='Pressure')
 # plt.plot(times, exhaust_terms, label='Exh')
 # plt.plot(times, burn_terms,    label='Burn')
 # plt.plot(times, burn_rates,    label='BR')
