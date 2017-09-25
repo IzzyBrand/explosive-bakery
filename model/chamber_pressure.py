@@ -2,12 +2,10 @@ from numpy import pi, sqrt
 import matplotlib.pyplot as plt
 import numpy as np
 from parameters import *
-
+import time
 
 times = []
 pressures = []
-burn_terms = []
-exhaust_terms = []
 burn_rates = []
 
 
@@ -20,25 +18,23 @@ def B(p):
 
 t = initial_time
 dt = 1e-7 # seconds
-pressure = 101325.0 # Pa
+pressure = pressure_ground # Pa
 numerator   = 1 + ((k - 1) / 2 * M**2)
 denominator = (1 + (k - 1) / 2)
 exp         = -1 * ((k + 1) / (2 * (k - 1)))
-exponent = (k + 1) / (2 * (k - 1))
+exponent    = (k + 1) / (2 * (k - 1))
 A_star      = M * nozzle_area * (numerator / denominator) ** exp
 
 R = R_effective
 flag1 = False
 flag2 = False
-T_0 = burn_temperature
+T_0 = burn_temp
+ltime = time.time()
+print '0.00%'
 while core_radius <= inner_radius:
-    if not flag1 and core_radius >= inner_radius / 2:
-        flag1 = True
-        print '1/2 done'
-
-    if not flag2 and core_radius >= 3*inner_radius / 4:
-        flag2 = True
-        print '3/4 done'
+    if time.time() - ltime > 4:
+        ltime = time.time()
+        print '%s%%' % str(round(core_radius / inner_radius * 100, 2))
         
     burn_rate = B(pressure)
     core_radius += burn_rate * dt
@@ -53,20 +49,22 @@ while core_radius <= inner_radius:
                    (2/(k+1))**exponent
 
     coeff = R * T_0 / chamber_volume
-    dpdt = coeff * (burn_term - exhaust_term)
-    dp = dpdt * dt
-    times.append(t)
-    pressures.append(pressure)
-    burn_rates.append(burn_rate)
-    burn_terms.append(burn_term)
-    exhaust_terms.append(exhaust_term)
+    dp = coeff * (burn_term - exhaust_term) * dt
+    if dp < 0:
+        print 'Warning: dpdt < 0 for pressure %s' % pressure
     pressure += dp
     t += dt
 
-print np.size(pressures)
-plt.plot(times, pressures,     label='Pressure')
-# plt.plot(times, exhaust_terms, label='Exh')
-# plt.plot(times, burn_terms,    label='Burn')
+    burn_rates.append(burn_rate)
+    times.append(t)
+    pressures.append(pressure)
+
+print 'Done.'
+
+pressures = np.array(pressures)
+plt.plot(times, 0.000145038 * pressures, label='Pressure')
 # plt.plot(times, burn_rates,    label='BR')
+plt.xlabel('Time (seconds)')
+plt.ylabel('Pressure (psi)')
 plt.legend()
 plt.show()
