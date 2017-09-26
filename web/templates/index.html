@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Boom</title>
+    <link rel='stylesheet' href='/static/style.css'/>
+    <script>$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};</script>
+    <script src='/static/jquery-3.2.1.min.js'></script>
+    <script src='/static/script.js'></script>
+</head>
+<body>
+    <button onclick="goboom()">Go boom</button>
+    <p></p>
+</body>
+
+</html>

@@ -1,0 +1,8 @@
+button {
+    width: 80%;
+    height: 50vh;
+    margin: 0 auto;
+    background-color: red;
+    font-size: 6em;
+    color: white;
+}
