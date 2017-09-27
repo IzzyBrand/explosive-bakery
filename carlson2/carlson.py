@@ -6,16 +6,23 @@
 #
 # Benjamin Shanahan, Elias Berkowitz, Isaiah Brand
 
-import serial, struct, time, math
+import sys, getopt
+sys.path.append(".")
+
+import RTIMU
+
+import serial, struct, time, math, sys
+
+#SETTINGS_FILE = "RTIMULib"
+s = RTIMU.Settings("RTIMULib")
+imu = RTIMU.RTIMU(s)
 
 # Import sensor libraries
-import RTIMU  # IMU library
-from BMP280 import BMP280  # Pressure sensor library
-
-from random import random
+#import RTIMU  # IMU library
+#from BMP280 import BMP280  # Pressure sensor library
 
 # Configure serial port where telemetry radio is connected to Carlson
-s = serial.Serial(port="/dev/ttyUSB0", baudrate=57600)
+#s = serial.Serial(port="/dev/ttyUSB0", baudrate=57600)
 
 # Additional parameters for data logging
 sample_rate = 15  # sample rate in Hz
@@ -52,9 +59,15 @@ data_struct = "Ifffffffffffffff"
 data_struct_size = struct.calcsize(data_struct)
 
 # Initialize I2C sensors
-imu  = RTIMU.RTIMU(RTIMU.Settings("RTIMULib"))
-baro = BMP280.BMP280()
-imu.IMUInit()
+#imu  = RTIMU.RTIMU(RTIMU.Settings("RTIMULib"))
+print imu.IMUName()
+
+#baro = BMP280.BMP280()
+
+if (not imu.IMUInit()):
+    print("IMU Init Failed")
+else:
+    print("IMU Init Succeeded")
 
 imu.setSlerpPower(0.02)
 imu.setGyroEnable(True)
@@ -63,10 +76,13 @@ imu.setCompassEnable(True)
 
 while (True):
 
-    # Read values from sensors and pack structure
-    imu_data = imu.getIMUData()
-    print imu_data
-    # fusion   = imu_data["fusionPose"]
+    if imu.IMURead():
+    
+        # Read values from sensors and pack structure
+        imu_data = imu.getIMUData()
+        #print imu_data
+        fusion   = imu_data["fusionPose"]
+        print "R",fusion[0],"P",fusion[1],"Y",fusion[2]
     # compass  = imu_data["compass"]
     # accel    = imu_data["accel"]
     # gyro     = imu_data["gyro"]
