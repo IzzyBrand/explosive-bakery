@@ -1,6 +1,4 @@
-# Reginald #
-
-I guess this is Carlson 2.0?!
+# Carlson v2.0 #
 
 ## Repositories ##
 
