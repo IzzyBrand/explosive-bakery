@@ -65,20 +65,21 @@ while (True):
 
     # Read values from sensors and pack structure
     imu_data = imu.getIMUData()
-    fusion   = imu_data["fusionPose"]
-    compass  = imu_data["compass"]
-    accel    = imu_data["accel"]
-    gyro     = imu_data["gyro"]
-    temperature, pressure = baro.read_temperature_pressure()
-    altitude = baro.read_altitude()
+    print imu_data
+    # fusion   = imu_data["fusionPose"]
+    # compass  = imu_data["compass"]
+    # accel    = imu_data["accel"]
+    # gyro     = imu_data["gyro"]
+    # temperature, pressure = baro.read_temperature_pressure()
+    # altitude = baro.read_altitude()
 
-    data = struct.pack(data_struct, t,
-        fusion[0],   fusion[1],  fusion[2],
-        compass[0],  compass[1], compass[2],
-        accel[0],    accel[1],   accel[2],
-        gyro[0],     gyro[1],    gyro[2],
-        temperature, pressure,   altitude)
-    s.write(data)  # write data to serial
+    # data = struct.pack(data_struct, t,
+    #     fusion[0],   fusion[1],  fusion[2],
+    #     compass[0],  compass[1], compass[2],
+    #     accel[0],    accel[1],   accel[2],
+    #     gyro[0],     gyro[1],    gyro[2],
+    #     temperature, pressure,   altitude)
+    # s.write(data)  # write data to serial
 
     # Wait a bit before taking the next sample
     time.sleep(1.0/sample_rate)
