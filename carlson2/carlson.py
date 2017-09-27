@@ -74,6 +74,7 @@ while (True):
     
         # Read values from sensors and pack structure
         imu_data = imu.getIMUData()
+        fusion   = imu_data["fusionPose"]
         compass  = imu_data["compass"]
         accel    = imu_data["accel"]
         gyro     = imu_data["gyro"]
