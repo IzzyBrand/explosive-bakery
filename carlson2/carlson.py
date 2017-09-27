@@ -16,7 +16,7 @@ from BMP280 import BMP280
 import serial, struct, time, math, sys
 
 # Configure serial port where telemetry radio is connected to Carlson
-# s = serial.Serial(port="/dev/ttyUSB0", baudrate=57600)
+telem = serial.Serial(port="/dev/ttyUSB0", baudrate=57600)
 
 # Additional parameters for data logging
 sample_rate = 15  # sample rate in Hz
@@ -53,8 +53,8 @@ data_struct = "Ifffffffffffffff"
 data_struct_size = struct.calcsize(data_struct)
 
 # Configure IMU and barometer
-s = RTIMU.Settings("RTIMULib")  # Configure calibration file
-imu = RTIMU.RTIMU(s)
+stgs = RTIMU.Settings("RTIMULib")  # load calibration file
+imu  = RTIMU.RTIMU(stgs)
 baro = BMP280.BMP280()
 
 # Initialize IMU
@@ -89,8 +89,8 @@ while (True):
             gyro[0],     gyro[1],    gyro[2],
             temperature, pressure,   altitude)
 
-        # Write data to serial
-        s.write(data)
+        # Write data to telemetry radio
+        telem.write(data)
 
     # Wait a bit before taking the next sample
     time.sleep(1.0/sample_rate)
