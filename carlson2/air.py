@@ -9,13 +9,43 @@
 # import sys, getopt
 # sys.path.append(".")
 
-import "config.py"
+import config
 
 # Import sensor libraries
 import RTIMU
 from BMP280 import BMP280
 
-import serial, struct, time, math, sys
+import serial, struct, time, math, sys, os
+from datetime import datetime as dt
+
+## Initiate new logging file
+script_path = os.path.abspath(os.path.expanduser(sys.argv[0]))
+folder = os.path.split(script_path)[0]
+log_folder = '%s/%s' % (folder, 'logs')
+
+for f in [x for x in os.listdir(log_folder) if x.endswith('.csv')]:
+    try:
+        launch_numb = int(f.split('_')[0])
+        last_launch = launch_numb if launch_numb > last_launch else last_launch
+    except ValueError:
+        print 'Warning: Invalid csv file in logs folder (%s)' % f
+
+date_str = dt.now().strftime('%y-%m-%d')
+
+if last_launch + 1 < 10:
+    filename = '0%s_%s' % (date_str, last_launch + 1)
+else:
+    filename = '%s_%s' % (date_str, last_launch + 1)
+
+LOG_PATH = '%s/%s.csv' % (log_folder, filename)
+if os.path.exists(LOG_PATH):
+    print 'ERROR: Log file already exists (%s)' % LOG_PATH
+    print 'This is probably a code error'
+    sys.exit(0)
+
+LOG_FILE = open('%s/%s.csv' % (log_folder, filename), 'a')
+
+## End logging file finding/opening
 
 # Configure serial port where telemetry radio is connected to Carlson
 telem = serial.Serial(port=port, baudrate=baud)
@@ -31,6 +61,7 @@ if (not imu.IMUInit()):
     print("IMU Init Failed")
 else:
     print("IMU Init Succeeded")
+
 imu.setSlerpPower(0.02)
 imu.setGyroEnable(True)
 imu.setAccelEnable(True)
@@ -56,12 +87,19 @@ while (True):
         altitude = baro.read_altitude()
 
         # # Pack file data structure
-        # data = struct.pack(file_struct, t,
-        #     fusion[0], fusion[1],  fusion[2],
-        #     compass[0],  compass[1], compass[2],
-        #     accel[0],    accel[1],   accel[2],
-        #     gyro[0],     gyro[1],    gyro[2],
-        #     temperature, pressure,   altitude)
+        data = [t, fusion[0], fusion[1],  fusion[2],
+                compass[0],  compass[1], compass[2],
+                accel[0],    accel[1],   accel[2],
+                gyro[0],     gyro[1],    gyro[2],
+                temperature, pressure,   altitude]
+        
+        # log current data to a csv
+        log_str = ''
+        for datum in data:
+            log_str += '%s,' % data
+
+        LOG_FILE.write(log_str)
+        LOG_FILE.flush()
 
         # Pack telemetry data structure and send!
         if (t % telem_rate == 0):
@@ -74,3 +112,4 @@ while (True):
     # Wait a bit before taking the next sample
     time.sleep(1.0/sample_rate)
     t = t + 1;  # increment sample timestamp
+
