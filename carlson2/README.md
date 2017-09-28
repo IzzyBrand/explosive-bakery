@@ -20,11 +20,11 @@ Python ground server script. This is a lite version of what will eventually run 
 
 The ground script serves up an input terminal where user can manually input commands. Data received from air script is printed in the terminal when it arrives.
 
-#### Available Commands ####
+#### Available Commands
 
 - arm [ `a` ]
     - effect: stops heartbeats from rocket, starts data logging, rocket is flight ready
-    - response: "armed"
+    - response: "armed", then "started logging"
 - deploy (chute) [ `d` ]
     - effect: deploys rocket parachute
     - response: "chute deployed"
@@ -32,7 +32,7 @@ The ground script serves up an input terminal where user can manually input comm
     - effect: stop data logging
     - response: "stopped logging"
 
-Additional commands (these may or may not be implemented):
+#### Additional commands (these may or may not be implemented):
 
 - calibrate
 - reboot
