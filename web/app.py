@@ -6,9 +6,9 @@ import time
 a = []
 app = Flask(__name__)
 
-@app.route("/")
+@app.route('/web')
 def index():
-    return render_template('index.html')
+    return render_template('web.html')
 
 @app.route('/boom')
 def boom_trigger():
@@ -33,4 +33,4 @@ def getdata():
     global a
     return json.dumps(a)
 
-app.run(host= '0.0.0.0')
+app.run(host='0.0.0.0')
