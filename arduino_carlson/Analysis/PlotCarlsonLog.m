@@ -29,7 +29,7 @@ window = 100;  % smoothing Gaussian window size
 if true
 %     plot(timestamp, accel(:,1));  lbls = [lbls; 'Accel X (G)'];
 %     plot(timestamp, accel(:,2));  lbls = [lbls; 'Accel Y (G)'];
-%     plot(timestamp, accel(:,3));  lbls = [lbls; 'Accel Z (G)'];
+    plot(timestamp, accel(:,3));  lbls = [lbls; 'Accel Z (G)'];
 end
 % Smoothed
 if false
@@ -40,7 +40,7 @@ end
 
 %% Plot Angular Acceleration (gyroscope)
 % Raw
-if true
+if false
     plot(timestamp, gyro(:,1));  lbls = [lbls; 'Gyro X (deg/s^2)'];
     plot(timestamp, gyro(:,2));  lbls = [lbls; 'Gyro Y (deg/s^2)'];
     plot(timestamp, gyro(:,3));  lbls = [lbls; 'Gyro Z (deg/s^2)'];

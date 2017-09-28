@@ -1,12 +1,7 @@
+import "config.py"
 import serial, struct, time
 
-s = serial.Serial(port="/dev/ttyUSB0", baudrate=57600, timeout=0)
-
-telem_rate  = 10  # telemetry read rate in Hz
-t           = 0  # time stamp (sample time (sec) = t/sample_rate)
-
-telem_data_struct      = "Iffff"
-telem_data_struct_size = struct.calcsize(telem_data_struct)
+s = serial.Serial(port=port, baudrate=baud, timeout=serial_timeout)
 
 labels = ["time","roll","pitch","yaw","altitude"]
 

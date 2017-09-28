@@ -9,6 +9,8 @@
 # import sys, getopt
 # sys.path.append(".")
 
+import "config.py"
+
 # Import sensor libraries
 import RTIMU
 from BMP280 import BMP280
@@ -16,59 +18,11 @@ from BMP280 import BMP280
 import serial, struct, time, math, sys
 
 # Configure serial port where telemetry radio is connected to Carlson
-port  = "/dev/ttyUSB0"
-baud  = 57600
 telem = serial.Serial(port=port, baudrate=baud)
 print "Initialized telemetry on port %s at baud %d." % (port, baud)
 
-# Additional parameters for data logging
-sample_rate = 50  # sample rate in Hz
-telem_rate  = 5   # not Hz! Telem data is sent every 'telem_rate' samples
-
-# Data structures (file save structure and telemetry structure)
-#
-# We use python's struct module to pack the data into a struct that we can then
-# send. We pack the data so that it is smaller in transmission.
-#
-# file_struct = {
-#     uint32_t timestamp;
-#     float    roll;
-#     float    pitch;
-#     float    yaw;
-#     float    magnetometer_x;
-#     float    magnetometer_y;
-#     float    magnetometer_z;
-#     float    accelerometer_x;
-#     float    accelerometer_y;
-#     float    accelerometer_z;
-#     float    gyroscope_x;
-#     float    gyroscope_y;
-#     float    gyroscope_z;
-#     float    temperature_x;
-#     float    pressure_y;
-#     float    altitude_z;
-# }
-#
-# See https://docs.python.org/2/library/struct.html
-#
-# I = unsigned int, 4 bytes (timestamp)
-# f = float, 4 bytes (data values from sensors, see above)
-file_struct      = "Ifffffffffffffff"
-file_struct_size = struct.calcsize(file_struct)
-
-# telem_data_struct = {
-#     uint32_t timestamp;
-#     float    roll;
-#     float    pitch;
-#     float    yaw;
-#     float    altitude;
-# }
-telem_data_struct      = "Iffff"
-telem_data_struct_size = struct.calcsize(telem_data_struct)
-
-
 # Configure IMU and barometer
-stgs = RTIMU.Settings("RTIMULib")  # load calibration file
+stgs = RTIMU.Settings(RTIMU_calibration_file)  # load calibration file
 imu  = RTIMU.RTIMU(stgs)
 baro = BMP280.BMP280()
 
@@ -83,8 +37,6 @@ imu.setAccelEnable(True)
 imu.setCompassEnable(True)
 
 print "Carlson booted successfully."
-
-telem_hz  = sample_rate / telem_rate
 print "Reading sensor data at %.2f Hz and sending telemetry updates at %.2f Hz!" % (sample_rate, telem_hz)
 
 t = 0  # time stamp (sample time (sec) = t/sample_rate)
