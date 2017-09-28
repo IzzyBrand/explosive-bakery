@@ -21,7 +21,7 @@ telem = serial.Serial(port=port, baudrate=57600)
 print "Initialized telemetry on port %s." % port
 
 # Additional parameters for data logging
-sample_rate = 15  # sample rate in Hz
+sample_rate = 100  # sample rate in Hz
 t           = 0  # time stamp (sample time (sec) = t/sample_rate)
 
 # Data structures (file save structure and telemetry structure)
