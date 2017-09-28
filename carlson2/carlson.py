@@ -16,41 +16,55 @@ from BMP280 import BMP280
 import serial, struct, time, math, sys
 
 # Configure serial port where telemetry radio is connected to Carlson
-telem = serial.Serial(port="/dev/ttyUSB0", baudrate=57600)
+port  = "/dev/ttyUSB0"
+telem = serial.Serial(port=port, baudrate=57600)
+print "Initialized telemetry on port %s." % port
 
 # Additional parameters for data logging
 sample_rate = 15  # sample rate in Hz
 t           = 0  # time stamp (sample time (sec) = t/sample_rate)
 
-# Data structure sent over telemetry from Carlson to base station.
+# Data structures (file save structure and telemetry structure)
 #
 # We use python's struct module to pack the data into a struct that we can then
 # send. We pack the data so that it is smaller in transmission.
 #
-# data_struct = {
-#     float roll;
-#     float pitch;
-#     float yaw;
-#     float magnetometer_x;
-#     float magnetometer_y;
-#     float magnetometer_z;
-#     float accelerometer_x;
-#     float accelerometer_y;
-#     float accelerometer_z;
-#     float gyroscope_x;
-#     float gyroscope_y;
-#     float gyroscope_z;
-#     float temperature_x;
-#     float pressure_y;
-#     float altitude_z;
+# file_struct = {
+#     uint32_t timestamp;
+#     float    roll;
+#     float    pitch;
+#     float    yaw;
+#     float    magnetometer_x;
+#     float    magnetometer_y;
+#     float    magnetometer_z;
+#     float    accelerometer_x;
+#     float    accelerometer_y;
+#     float    accelerometer_z;
+#     float    gyroscope_x;
+#     float    gyroscope_y;
+#     float    gyroscope_z;
+#     float    temperature_x;
+#     float    pressure_y;
+#     float    altitude_z;
 # }
 #
 # See https://docs.python.org/2/library/struct.html
 #
 # I = unsigned int, 4 bytes (timestamp)
 # f = float, 4 bytes (data values from sensors, see above)
-data_struct = "Ifffffffffffffff"
-data_struct_size = struct.calcsize(data_struct)
+file_struct      = "Ifffffffffffffff"
+file_struct_size = struct.calcsize(file_struct)
+
+# telem_data_struct = {
+#     uint32_t timestamp;
+#     float    roll;
+#     float    pitch;
+#     float    yaw;
+#     float    altitude;
+# }
+telem_data_struct      = "Iffff"
+telem_data_struct_size = struct.calcsize(telem_data_struct)
+
 
 # Configure IMU and barometer
 stgs = RTIMU.Settings("RTIMULib")  # load calibration file
@@ -67,6 +81,9 @@ imu.setGyroEnable(True)
 imu.setAccelEnable(True)
 imu.setCompassEnable(True)
 
+print "Carlson booted successfully."
+print "Now reading sensor data!"
+
 while (True):
 
     # Read data from sensors
@@ -81,16 +98,21 @@ while (True):
         temperature, pressure = baro.read_temperature_pressure()
         altitude = baro.read_altitude()
 
-        # Pack data structure
-        data = struct.pack(data_struct, t,
-            fusion[0],   fusion[1],  fusion[2],
-            compass[0],  compass[1], compass[2],
-            accel[0],    accel[1],   accel[2],
-            gyro[0],     gyro[1],    gyro[2],
-            temperature, pressure,   altitude)
+        # # Pack file data structure
+        # data = struct.pack(file_struct, t,
+        #     fusion[0], fusion[1],  fusion[2],
+        #     compass[0],  compass[1], compass[2],
+        #     accel[0],    accel[1],   accel[2],
+        #     gyro[0],     gyro[1],    gyro[2],
+        #     temperature, pressure,   altitude)
+
+        # Pack telemetry data structure
+        telem_data = struct.pack(telem_data_struct, t, 
+            math.degrees(fusion[0]), math.degrees(fusion[1]), math.degrees(fusion[2]),
+            altitude)
 
         # Write data to telemetry radio
-        telem.write(data)
+        telem.write(telem_data)
 
     # Wait a bit before taking the next sample
     time.sleep(1.0/sample_rate)
