@@ -1,3 +1,5 @@
+import struct
+
 ###############################################################################
 ## Sensors
 ###############################################################################
@@ -11,6 +13,7 @@ RTIMU_calibration_file = "RTIMULib"
 port           = "/dev/ttyUSB0"
 baud           = 57600
 serial_timeout = 0
+reply_time     = 0.5  # (s) how long to wait before panicking (send again)
 
 ###############################################################################
 ## Data Logging
