@@ -17,14 +17,13 @@ import serial, struct, time, math, sys
 
 # Configure serial port where telemetry radio is connected to Carlson
 port  = "/dev/ttyUSB0"
-telem = serial.Serial(port=port, baudrate=57600)
-print "Initialized telemetry on port %s." % port
+baud  = 57600
+telem = serial.Serial(port=port, baudrate=baud)
+print "Initialized telemetry on port %s at baud %d." % (port, baud)
 
 # Additional parameters for data logging
-sample_rate = 100  # sample rate in Hz
-telem_rate  = 10   # not Hz! Telem data is sent every 'telem_rate' samples
-
-t           = 0  # time stamp (sample time (sec) = t/sample_rate)
+sample_rate = 50  # sample rate in Hz
+telem_rate  = 5   # not Hz! Telem data is sent every 'telem_rate' samples
 
 # Data structures (file save structure and telemetry structure)
 #
@@ -84,7 +83,11 @@ imu.setAccelEnable(True)
 imu.setCompassEnable(True)
 
 print "Carlson booted successfully."
-print "Now reading sensor data!"
+
+telem_hz  = sample_rate / telem_rate
+print "Reading sensor data at %.2f Hz and sending telemetry updates at %.2f Hz!" % (sample_rate, telem_hz)
+
+t = 0  # time stamp (sample time (sec) = t/sample_rate)
 
 while (True):
 
