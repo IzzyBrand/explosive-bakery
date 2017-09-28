@@ -22,6 +22,8 @@ print "Initialized telemetry on port %s." % port
 
 # Additional parameters for data logging
 sample_rate = 100  # sample rate in Hz
+telem_rate  = 10   # not Hz! Telem data is sent every 'telem_rate' samples
+
 t           = 0  # time stamp (sample time (sec) = t/sample_rate)
 
 # Data structures (file save structure and telemetry structure)
@@ -106,13 +108,13 @@ while (True):
         #     gyro[0],     gyro[1],    gyro[2],
         #     temperature, pressure,   altitude)
 
-        # Pack telemetry data structure
-        telem_data = struct.pack(telem_data_struct, t, 
-            math.degrees(fusion[0]), math.degrees(fusion[1]), math.degrees(fusion[2]),
-            altitude)
-
-        # Write data to telemetry radio
-        telem.write(telem_data)
+        # Pack telemetry data structure and send!
+        if (t % telem_rate == 0):
+            telem_data = struct.pack(telem_data_struct, t, 
+                math.degrees(fusion[0]), math.degrees(fusion[1]), math.degrees(fusion[2]),
+                altitude)
+            # Write data to telemetry radio
+            telem.write(telem_data)
 
     # Wait a bit before taking the next sample
     time.sleep(1.0/sample_rate)
