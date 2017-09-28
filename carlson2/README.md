@@ -4,13 +4,13 @@
 
 Python script running on the Raspberry Pi in the rocket. This script does the following:
 
-    1. Start on Pi boot.
-    2. Send heartbeats at a regular interval across telemetry radio to ground station until "arm" command is received.
-    3. When "arm" command received, stop heartbeats, send "armed" confirmation to ground station, and begin saving sensor data to file. Send "started logging" confirmation to ground.
-    4. Rocket can be launched.
-    5. During flight, sensor data is logged, and telemetry radio is being checked (non-blocking) for commands from ground.
-    6. If command "deploy chute" is received, GPIO pin is triggered and parachute deployed.
-    7. If command "stop logging" is received, save and flush log file and stop logging. Send "stopped logging" confirmation to ground.
+1. Start on Pi boot.
+2. Send heartbeats at a regular interval across telemetry radio to ground station until "arm" command is received.
+3. When "arm" command received, stop heartbeats, send "armed" confirmation to ground station, and begin saving sensor data to file. Send "started logging" confirmation to ground.
+4. Rocket can be launched.
+5. During flight, sensor data is logged, and telemetry radio is being checked (non-blocking) for commands from ground.
+6. If command "deploy chute" is received, GPIO pin is triggered and parachute deployed.
+7. If command "stop logging" is received, save and flush log file and stop logging. Send "stopped logging" confirmation to ground.
 
 Do we want to add live calibration (in the field)?
 
@@ -22,22 +22,22 @@ The ground script serves up an input terminal where user can manually input comm
 
 #### Available Commands ####
 
-    - arm [ `a` ]
-        - effect: stops heartbeats from rocket, starts data logging, rocket is flight ready
-        - response: "armed"
-    - deploy (chute) [ `d` ]
-        - effect: deploys rocket parachute
-        - response: "chute deployed"
-    - stop (data logging) [ `x` ]
-        - effect: stop data logging
-        - response: "stopped logging"
+- arm [ `a` ]
+    - effect: stops heartbeats from rocket, starts data logging, rocket is flight ready
+    - response: "armed"
+- deploy (chute) [ `d` ]
+    - effect: deploys rocket parachute
+    - response: "chute deployed"
+- stop (data logging) [ `x` ]
+    - effect: stop data logging
+    - response: "stopped logging"
 
 Additional commands (these may or may not be implemented):
 
-    - calibrate
-    - reboot
-    - shutdown
-    - disarm
+- calibrate
+- reboot
+- shutdown
+- disarm
 
 ## Repositories ##
 
