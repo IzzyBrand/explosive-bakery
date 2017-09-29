@@ -112,6 +112,6 @@ while (True):
             telem.write(telem_data)
 
     # Wait a bit before taking the next sample
-    time.sleep(1.0/sample_rate)
+    time.sleep(1.0/config.sample_rate)
     t = t + 1  # increment sample timestamp
 
