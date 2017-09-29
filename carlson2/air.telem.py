@@ -48,5 +48,5 @@ while (True):
             print "STOPPED DATA LOGGING"
         else:
             print "UNRECOGNIZED COMMAND"
-        # Respond to ground station
-        telem.write(command)
+    # Respond to ground station
+    telem.write(command)
