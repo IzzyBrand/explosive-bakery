@@ -23,6 +23,8 @@ script_path = os.path.abspath(os.path.expanduser(sys.argv[0]))
 folder = os.path.split(script_path)[0]
 log_folder = '%s/%s' % (folder, config.log_folder)
 
+last_launch = 0
+
 for f in [x for x in os.listdir(log_folder) if x.endswith('.csv')]:
     try:
         launch_numb = int(f.split('_')[0])
