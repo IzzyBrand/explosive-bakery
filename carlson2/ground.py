@@ -137,16 +137,17 @@ while (True):
 
     if time() - last_time > 5:
         response = telem.read(1)
-        print "!!! received:", response
-        # response = "d"
-        # Print to console the command that we just received
-        print "\n=== Carlson transmission ==="
-        print commands[response]["success"]
-        print "===== End transmission ====="
-        # Did we receive a response to the command we sent?
-        if response in commands and response == current_cmd:
-            got_response = True
-        last_time = time()  # remove this
+        if response != "":
+            print "!!! received:", response
+            # response = "d"
+            # Print to console the command that we just received
+            print "\n=== Carlson transmission ==="
+            print commands[response]["success"]
+            print "===== End transmission ====="
+            # Did we receive a response to the command we sent?
+            if response in commands and response == current_cmd:
+                got_response = True
+            last_time = time()  # TODO remove this
 
     if not got_response and (time() - time_cmd_send > config.time_before_resend):
         print "No response, resending '%s' command." % current_cmd
