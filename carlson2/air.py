@@ -54,7 +54,7 @@ telem = serial.Serial(port=config.port, baudrate=config.baud)
 print "Initialized telemetry on port %s at baud %d." % (config.port, config.baud)
 
 # Configure IMU and barometer
-stgs = RTIMU.Settings(RTIMU_calibration_file)  # load calibration file
+stgs = RTIMU.Settings(config.RTIMU_calibration_file)  # load calibration file
 imu  = RTIMU.RTIMU(stgs)
 baro = BMP280.BMP280()
 
