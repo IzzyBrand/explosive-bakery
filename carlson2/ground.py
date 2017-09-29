@@ -138,7 +138,6 @@ while (True):
     if time() - last_time > 5:
         response = telem.read(1)
         if response != "":
-            print "!!! received:", response
             # response = "d"
             # Print to console the command that we just received
             print "\n=== Carlson transmission ==="

@@ -21,12 +21,14 @@ import serial, struct, time, math, sys, os
 telem = serial.Serial(port=config.port, baudrate=config.baud, timeout=config.serial_timeout)
 print "Initialized telemetry on port %s at baud %d." % (config.port, config.baud)
 
+current_command = ""
+
 while (True):
 
     # Read incoming command over telemetry
     command = telem.read(1)
-    if command != "":
-        print "!!! received:", command
+    if command != "" and command != current_command:
+        current_command = command
         if command == "a":
             print "ARMED"
         elif command == "d":
@@ -35,6 +37,7 @@ while (True):
             print "STOPPED DATA LOGGING"
         else:
             print "UNRECOGNIZED COMMAND"
+        # Respond to ground station
         telem.write(command)
 
     # Wait a bit before taking the next sample
