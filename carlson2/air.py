@@ -103,13 +103,7 @@ while (True):
         LOG_FILE.write(log_str)
         LOG_FILE.flush()
 
-        # Pack telemetry data structure and send!
-        if (t % telem_rate == 0):
-            telem_data = struct.pack(telem_data_struct, t, 
-                math.degrees(fusion[0]), math.degrees(fusion[1]), math.degrees(fusion[2]),
-                altitude)
-            # Write data to telemetry radio
-            telem.write(telem_data)
+        # Read and respond to commands from telemetry
 
     # Wait a bit before taking the next sample
     time.sleep(1.0/config.sample_rate)
