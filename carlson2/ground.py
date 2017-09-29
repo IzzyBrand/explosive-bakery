@@ -29,6 +29,7 @@ commands      = dict
 time_cmd_send = 0
 got_response  = True
 current_cmd   = None
+is_armed      = False
 
 ###############################################################################
 ## Functions
@@ -106,7 +107,11 @@ print ""
 # seconds, alert the user.
 last_heartbeat = time()
 while (True):
-    # data = telem.readline()
+    heartbeat = telem.read(1)
+    if heartbeat == "H":
+        last_heartbeat = time()
+    if time() - last_heartbeat > config.heartbeat_max_delay:
+        print "No heartbeat received in last %d seconds!" % config.heartbeat_max_delay
     break
 
 # Add Queue and launch a thread to monitor user input.
@@ -115,30 +120,35 @@ input_thread = threading.Thread(target=add_input, args=(input_queue,))
 input_thread.daemon = True
 input_thread.start()
 
-last_time = time()
-
 # Respond to user input, non-blocking.
 while (True):
+
+    # Update heartbeat timer (if rocket is unarmed)
+    if not is_armed:
+        if time() - last_heartbeat > config.heartbeat_max_delay:
+            print "No heartbeat received in last %d seconds!" % config.heartbeat_max_delay
 
     if not input_queue.empty():
         arg = input_queue.get().lower().strip()
         if arg != "":
-            if arg in commands:
+            if is_armed && arg in commands:
                 cmd_info = commands[arg]
                 print cmd_info["say"]
                 if cmd_info["parameter"] is None:
                     cmd_info["function"]()
                 else:    
                     cmd_info["function"](cmd_info["parameter"])
+            elif not is_armed:
+                print "Rocket is unarmed."
             elif arg == "":
                 pass
             else:
                 print "Command '%s' not recognized. Type 'h' for help." % arg
 
-    if time() - last_time > 5:
-        response = telem.read(1)
-        if response != "":
-            # response = "d"
+    # Read (non-blocking) from telemetry radio
+    response = telem.read(1)
+    if response != "":
+        if response != "H":
             # Print to console the command that we just received
             print "\n=== Carlson transmission ==="
             print commands[response]["success"]
@@ -146,7 +156,10 @@ while (True):
             # Did we receive a response to the command we sent?
             if response in commands and response == current_cmd:
                 got_response = True
-            last_time = time()  # TODO remove this
+        elif response == "H":
+            last_heartbeat = time()
+        else:
+            print "Unrecognized packet (%s)!" % response
 
     if not got_response and (time() - time_cmd_send > config.time_before_resend):
         print "No response, resending '%s' command." % current_cmd

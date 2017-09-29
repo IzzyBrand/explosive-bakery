@@ -10,11 +10,12 @@ RTIMU_calibration_file = "RTIMULib"
 ## Telemetry
 ###############################################################################
 
-port               = "/dev/ttyUSB0"
-baud               = 57600
-serial_timeout     = 0
-time_before_resend = 0.5  # (s) how long to wait before panicking (send again)
-heartbeat_delay    = 1    # (s) delay between heartbeats
+port                = "/dev/ttyUSB0"
+baud                = 57600
+serial_timeout      = 0
+time_before_resend  = 0.5  # (s) how long to wait before panicking (send again)
+heartbeat_delay     = 1    # (s) delay between heartbeats
+heartbeat_max_delay = 3    # (s) max delay between heartbeats before panic
 
 ###############################################################################
 ## Data Logging
