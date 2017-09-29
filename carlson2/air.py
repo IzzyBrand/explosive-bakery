@@ -100,6 +100,8 @@ while (True):
         for datum in data:
             log_str += '%s,' % data
 
+        print log_str
+
         LOG_FILE.write(log_str)
         LOG_FILE.flush()
 
