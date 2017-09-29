@@ -20,7 +20,7 @@ import sys
 import threading
 import Queue
 
-from time import time
+from time import time, sleep
 
 telem = serial.Serial(port=config.port, baudrate=config.baud, timeout=config.serial_timeout)
 print "Telemetry radio found."
@@ -60,34 +60,34 @@ def print_help():
 ###############################################################################
 
 commands = {
-    "a": {
+    config.ARM: {
         "say": "Arming rocket.",
         "success": "Rocket is armed.",
         "function": send_telem,
         "parameter": "a",
         "help": "Arm the rocket."
     },
-    "d": {
+    config.DEPLOY: {
         "say": "Deploying parachute.",
         "success": "Rocket deployed chute.",
         "function": send_telem,
         "parameter": "d",
         "help": "Deploy the parachute."
     },
-    "x": {
+    config.STOP: {
         "say": "Stopping data logging.",
         "success": "Rocket stopped data logging.",
         "function": send_telem,
         "parameter": "x",
         "help": "Stop logging data to SD card."
     },
-    "h": {
+    config.HELP: {
         "say": "Recognized commands:",
         "function": print_help,
         "parameter": None,
         "help": "Get help."
     },
-    "q": {
+    config.QUIT: {
         "say": "Goodbye.",
         "function": quit,
         "parameter": None,
@@ -99,20 +99,9 @@ commands = {
 ## Input Buffer
 ###############################################################################
 
-print "Ground station boot successful. Type 'h' for help."
+print "Ground station boot successful. Type '%s' for help." % config.HELP
 raw_input("Press ENTER once rocket is powered on.")
 print ""
-
-# Sit and listen to rocket heartbeats. If we don't receive a heartbeat for 3 
-# seconds, alert the user.
-last_heartbeat = time()
-while (True):
-    heartbeat = telem.read(1)
-    if heartbeat == "H":
-        last_heartbeat = time()
-    if time() - last_heartbeat > config.heartbeat_max_delay:
-        print "No heartbeat received in last %d seconds!" % config.heartbeat_max_delay
-    break
 
 # Add Queue and launch a thread to monitor user input.
 input_queue = Queue.Queue()
@@ -121,17 +110,19 @@ input_thread.daemon = True
 input_thread.start()
 
 # Respond to user input, non-blocking.
+last_heartbeat = time()
 while (True):
 
     # Update heartbeat timer (if rocket is unarmed)
     if not is_armed:
         if time() - last_heartbeat > config.heartbeat_max_delay:
             print "No heartbeat received in last %d seconds!" % config.heartbeat_max_delay
+            sleep(config.time_before_resend)
 
     if not input_queue.empty():
         arg = input_queue.get().lower().strip()
         if arg != "":
-            if is_armed && arg in commands:
+            if arg == config.HELP or arg == config.QUIT or (is_armed and arg in commands):
                 cmd_info = commands[arg]
                 print cmd_info["say"]
                 if cmd_info["parameter"] is None:
@@ -139,16 +130,21 @@ while (True):
                 else:    
                     cmd_info["function"](cmd_info["parameter"])
             elif not is_armed:
-                print "Rocket is unarmed."
+                if arg == config.ARM:  # allow rocket to be armed
+                    send_telem(arg)
+                else:
+                    print "Rocket must be armed before sending commands."
             elif arg == "":
                 pass
             else:
-                print "Command '%s' not recognized. Type 'h' for help." % arg
+                print "Command '%s' not recognized. Type '%s' for help." % (arg, config.HELP)
 
     # Read (non-blocking) from telemetry radio
     response = telem.read(1)
     if response != "":
-        if response != "H":
+        if response != config.HEARTBEAT:
+            if response == config.ARM:
+                is_armed = True
             # Print to console the command that we just received
             print "\n=== Carlson transmission ==="
             print commands[response]["success"]
@@ -156,7 +152,7 @@ while (True):
             # Did we receive a response to the command we sent?
             if response in commands and response == current_cmd:
                 got_response = True
-        elif response == "H":
+        elif response == config.HEARTBEAT:
             last_heartbeat = time()
         else:
             print "Unrecognized packet (%s)!" % response

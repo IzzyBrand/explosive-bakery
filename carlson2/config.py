@@ -17,6 +17,13 @@ time_before_resend  = 0.5  # (s) how long to wait before panicking (send again)
 heartbeat_delay     = 1    # (s) delay between heartbeats
 heartbeat_max_delay = 3    # (s) max delay between heartbeats before panic
 
+HEARTBEAT = "H"
+ARM       = "a"
+DEPLOY    = "d"
+STOP      = "x"
+HELP      = "h"
+QUIT      = "q"
+
 ###############################################################################
 ## Data Logging
 ###############################################################################

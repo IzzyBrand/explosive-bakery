@@ -26,9 +26,9 @@ current_command = ""
 
 # Send heartbeats to ground station
 while (True):
-    telem.write("H")
+    telem.write(config.HEARTBEAT)
     command = telem.read(1)
-    if command == "a":
+    if command == config.ARM:
         print "ARMED"
         telem.write(command)  # respond to ground station
         break;  # go into armed state
@@ -42,9 +42,9 @@ while (True):
     command = telem.read(1)
     if command != "" and command != current_command:
         current_command = command
-        if command == "d":
+        if command == config.DEPLOY:
             print "DEPLOYED CHUTE"
-        elif command == "x":
+        elif command == config.STOP:
             print "STOPPED DATA LOGGING"
         else:
             print "UNRECOGNIZED COMMAND"
