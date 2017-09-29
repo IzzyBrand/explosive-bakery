@@ -21,7 +21,20 @@ import serial, struct, time, math, sys, os
 telem = serial.Serial(port=config.port, baudrate=config.baud, timeout=config.serial_timeout)
 print "Initialized telemetry on port %s at baud %d." % (config.port, config.baud)
 
+# Stores last unique command received by rocket
 current_command = ""
+
+# Send heartbeats to ground station
+while (True):
+    telem.write("H")
+    command = telem.read(1)
+    if command == "a":
+        print "ARMED"
+        telem.write(command)  # respond to ground station
+        break;  # go into armed state
+    time.sleep(config.heartbeat_delay)
+
+# Past here, rocket is armed
 
 while (True):
 
@@ -29,9 +42,7 @@ while (True):
     command = telem.read(1)
     if command != "" and command != current_command:
         current_command = command
-        if command == "a":
-            print "ARMED"
-        elif command == "d":
+        if command == "d":
             print "DEPLOYED CHUTE"
         elif command == "x":
             print "STOPPED DATA LOGGING"
@@ -39,8 +50,3 @@ while (True):
             print "UNRECOGNIZED COMMAND"
         # Respond to ground station
         telem.write(command)
-
-    # Wait a bit before taking the next sample
-    time.sleep(1.0/config.sample_rate)
-    # t = t + 1  # increment sample timestamp
-

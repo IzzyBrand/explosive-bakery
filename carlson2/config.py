@@ -14,6 +14,7 @@ port               = "/dev/ttyUSB0"
 baud               = 57600
 serial_timeout     = 0
 time_before_resend = 0.5  # (s) how long to wait before panicking (send again)
+heartbeat_delay    = 1    # (s) delay between heartbeats
 
 ###############################################################################
 ## Data Logging
