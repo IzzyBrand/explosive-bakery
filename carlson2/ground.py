@@ -46,7 +46,6 @@ def send_telem(cmd=None):
         time_cmd_send = time()
         current_cmd   = cmd
         got_response  = False
-        pass
 
 def quit():
     exit()
@@ -137,8 +136,9 @@ while (True):
                 print "Command '%s' not recognized. Type 'h' for help." % arg
 
     if time() - last_time > 5:
-        # response = telem.read(1)
-        response = "d"
+        response = telem.read(1)
+        print "!!! received:", response
+        # response = "d"
         # Print to console the command that we just received
         print "\n=== Carlson transmission ==="
         print commands[response]["success"]

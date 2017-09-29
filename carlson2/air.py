@@ -21,7 +21,7 @@ from datetime import datetime as dt
 ## Initiate new logging file
 script_path = os.path.abspath(os.path.expanduser(sys.argv[0]))
 folder = os.path.split(script_path)[0]
-log_folder = '%s/%s' % (folder, 'logs')
+log_folder = '%s/%s' % (folder, config.log_folder)
 
 for f in [x for x in os.listdir(log_folder) if x.endswith('.csv')]:
     try:
@@ -48,8 +48,8 @@ LOG_FILE = open('%s/%s.csv' % (log_folder, filename), 'a')
 ## End logging file finding/opening
 
 # Configure serial port where telemetry radio is connected to Carlson
-telem = serial.Serial(port=port, baudrate=baud)
-print "Initialized telemetry on port %s at baud %d." % (port, baud)
+telem = serial.Serial(port=config.port, baudrate=config.baud)
+print "Initialized telemetry on port %s at baud %d." % (config.port, config.baud)
 
 # Configure IMU and barometer
 stgs = RTIMU.Settings(RTIMU_calibration_file)  # load calibration file
@@ -68,7 +68,7 @@ imu.setAccelEnable(True)
 imu.setCompassEnable(True)
 
 print "Carlson booted successfully."
-print "Reading sensor data at %.2f Hz and sending telemetry updates at %.2f Hz!" % (sample_rate, telem_hz)
+print "Reading sensor data at %.2f Hz and sending telemetry updates at %.2f Hz!" % (config.sample_rate, config.telem_hz)
 
 t = 0  # time stamp (sample time (sec) = t/sample_rate)
 
@@ -111,5 +111,5 @@ while (True):
 
     # Wait a bit before taking the next sample
     time.sleep(1.0/sample_rate)
-    t = t + 1;  # increment sample timestamp
+    t = t + 1  # increment sample timestamp
 
