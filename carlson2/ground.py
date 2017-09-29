@@ -22,7 +22,7 @@ import Queue
 
 from time import time
 
-# telem = serial.Serial(port=config.port, baudrate=config.baud, timeout=config.serial_timeout)
+telem = serial.Serial(port=config.port, baudrate=config.baud, timeout=config.serial_timeout)
 print "Telemetry radio found."
 
 commands      = dict
@@ -40,8 +40,9 @@ def add_input(input_queue):
         input_queue.put(sys.stdin.read(1))
 
 def send_telem(cmd=None):
+    global got_response, current_cmd, time_cmd_send
     if (cmd is not None and got_response) or (not got_response and cmd == current_cmd):
-        #telem.write(cmd)
+        telem.write(cmd)
         time_cmd_send = time()
         current_cmd   = cmd
         got_response  = False
@@ -136,17 +137,19 @@ while (True):
                 print "Command '%s' not recognized. Type 'h' for help." % arg
 
     if time() - last_time > 5:
-        print "\n=== Carlson transmission ==="
         # response = telem.read(1)
         response = "d"
-        if response in commands:
-            got_response = True
-            print commands[response]["success"]
+        # Print to console the command that we just received
+        print "\n=== Carlson transmission ==="
+        print commands[response]["success"]
         print "===== End transmission ====="
-        last_time = time()
+        # Did we receive a response to the command we sent?
+        if response in commands and response == current_cmd:
+            got_response = True
+        last_time = time()  # remove this
 
-    if not got_response and (time() - time_cmd_send > reply_time):
-        print "No response, resending command."
+    if not got_response and (time() - time_cmd_send > config.time_before_resend):
+        print "No response, resending '%s' command." % current_cmd
         send_telem(current_cmd)
 
 
