@@ -46,6 +46,8 @@ while (True):
             print "DEPLOYED CHUTE"
         elif command == config.STOP:
             print "STOPPED DATA LOGGING"
+        elif command == config.ARM:
+            print "ROCKET ALREADY ARMED"
         else:
             print "UNRECOGNIZED COMMAND"
     # Respond to ground station
