@@ -100,6 +100,7 @@ print "Reading sensor data at %.2f Hz and sending telemetry updates at %.2f Hz!"
 
 # Armed state, data logging enabled.
 t0 = time.time()  # get initial time so we can subtract it
+deployed_chute = False
 while (True):
 
     # Read incoming command over telemetry
@@ -107,8 +108,10 @@ while (True):
     if command != "" and command != current_command:
         current_command = command
         if command == config.DEPLOY:
+            # gpio here
+            deployed_chute = True
             print "DEPLOYED CHUTE"
-        elif command == config.STOP:
+        elif deployed_chute and command == config.STOP:
             print "STOPPED DATA LOGGING"
             telem.write(command)  # do this because we break
             break;
