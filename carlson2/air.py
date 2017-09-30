@@ -69,11 +69,10 @@ imu.setGyroEnable(True)
 imu.setAccelEnable(True)
 imu.setCompassEnable(True)
 
-print "Carlson booted successfully."
-print "Reading sensor data at %.2f Hz and sending telemetry updates at %.2f Hz!" % (config.sample_rate, config.telem_hz)
-
 t               = 0   # time stamp (sample time (sec) = t/sample_rate)
 current_command = ""  # stores last unique command received by rocket
+
+print "Carlson booted successfully. Waiting for arm command."
 
 # Stop Carlson and send heartbeats infinitely until we receive the arm command,
 # which will tell Carlson to break from the heartbeat loop and start logging
@@ -87,6 +86,8 @@ while (True):
         break;  # go into armed state
     time.sleep(config.heartbeat_delay)
 
+print "Reading sensor data at %.2f Hz and sending telemetry updates at %.2f Hz!" % (config.sample_rate, config.telem_hz)
+
 # Armed state, data logging enabled.
 t0 = time.time()  # get initial time so we can subtract it
 while (True):
@@ -99,6 +100,7 @@ while (True):
             print "DEPLOYED CHUTE"
         elif command == config.STOP:
             print "STOPPED DATA LOGGING"
+            telem.write(command)  # do this because we break
             break;
         elif command == config.ARM:
             print "ROCKET ALREADY ARMED"
@@ -126,11 +128,14 @@ while (True):
                 accel[0],    accel[1],   accel[2],
                 gyro[0],     gyro[1],    gyro[2],
                 temperature, pressure,   altitude]
-        
+        n_data = 16  # hard-coded cuz faster
+
         # Log current data to a csv
         log_str = ""
-        for datum in data:
+        for idx, datum in enumerate(data):
             log_str += "%s," % datum
+            if idx == n_data-1:  # if last data point, add line break
+                print ""
 
         # Log data to and flush file
         LOG_FILE.write(log_str)
