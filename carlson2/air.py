@@ -29,8 +29,6 @@ while True:
         i += 1
         time.sleep(.5)
 
-os.system("echo %s > /tmp/hi.txt" % i)
-
 print "Initialized telemetry on port %s at baud %d." % (config.port, config.baud)
 
 ## Create new logging file
