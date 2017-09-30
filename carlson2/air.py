@@ -111,16 +111,17 @@ while (True):
             # gpio here
             deployed_chute = True
             print "DEPLOYED CHUTE"
+            telem.write(command)
         elif deployed_chute and command == config.STOP:
             print "STOPPED DATA LOGGING"
             telem.write(command)  # do this because we break
             break;
         elif command == config.ARM:
             print "ROCKET ALREADY ARMED"
+            telem.write(command)
         else:
             print "UNRECOGNIZED COMMAND"
-        # Respond to ground station
-        telem.write(command)
+            telem.write(config.NOPE)
 
     # Read data from sensors
     if imu.IMURead():
