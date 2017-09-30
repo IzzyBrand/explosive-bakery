@@ -50,7 +50,7 @@ LOG_FILE = open('%s/%s.csv' % (log_folder, filename), 'a')
 ## End logging file finding/opening
 
 # Configure serial port where telemetry radio is connected to Carlson
-telem = serial.Serial(port=config.port, baudrate=config.baud)
+telem = serial.Serial(port=config.port, baudrate=config.baud, timeout=config.serial_timeout)
 print "Initialized telemetry on port %s at baud %d." % (config.port, config.baud)
 
 # Configure IMU and barometer
