@@ -1,7 +1,7 @@
 {
     'pressureValid': True, 
     'accelValid': True, 
-    'temperature': 3.2291521811901085e-41, 
+    'temperature': 0.0, 
     'pressure': 0.0, 
     'fusionQPoseValid': True, 
     'timestamp': 0L, 

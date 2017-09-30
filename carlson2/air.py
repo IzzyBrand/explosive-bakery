@@ -124,12 +124,13 @@ while (True):
 
         # Pack file data structure
         data = [time.time()-t0, 
-                fusion[0],   fusion[1],  fusion[2],
+                fusion[0],   fusion[1],  fusion[2],  # roll, pitch, yaw in default sensor orientation
                 compass[0],  compass[1], compass[2],
                 accel[0],    accel[1],   accel[2],
                 gyro[0],     gyro[1],    gyro[2],
-                temperature, pressure,   altitude]
-        n_data = 16  # hard-coded cuz faster
+                temperature, pressure,   altitude,
+                current_command]
+        n_data = 17  # hard-coded cuz faster
 
         # Log current data to a csv
         log_str = ""
