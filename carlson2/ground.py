@@ -92,6 +92,7 @@ commands = {
     },
     config.NOPE: {
         "say": "Nope, sorry I ain't gonna do dat.",
+        "success": "Invalid command at this time.",
         "function": None,
         "parameter": None,
         "help": "Response from Carlson if command cannot be executed."
