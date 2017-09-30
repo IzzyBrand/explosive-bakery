@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 # Carlson v2
 #
 # This code reads the 10-DOF sensor values every 1/sample_rate seconds and
@@ -14,6 +16,22 @@ from BMP280 import BMP280
 
 import serial, struct, time, math, sys, os
 from datetime import datetime as dt
+
+# Configure serial port where telemetry radio is connected to Carlson
+i = 0
+while True:
+    try:
+        telem = serial.Serial(port=config.port,
+                              baudrate=config.baud,
+                              timeout=config.serial_timeout)
+        break
+    except serial.serialutil.SerialException:
+        i += 1
+        time.sleep(.5)
+
+os.system("echo %s > /tmp/hi.txt" % i)
+
+print "Initialized telemetry on port %s at baud %d." % (config.port, config.baud)
 
 ## Create new logging file
 script_path = os.path.abspath(os.path.expanduser(sys.argv[0]))
@@ -45,9 +63,6 @@ if os.path.exists(LOG_PATH):
 LOG_FILE = open('%s/%s.csv' % (log_folder, filename), 'a')
 ## End logging file finding/opening
 
-# Configure serial port where telemetry radio is connected to Carlson
-telem = serial.Serial(port=config.port, baudrate=config.baud, timeout=config.serial_timeout)
-print "Initialized telemetry on port %s at baud %d." % (config.port, config.baud)
 
 # Configure IMU and barometer
 stgs = RTIMU.Settings(config.RTIMU_calibration_file)  # load calibration file
