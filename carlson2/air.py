@@ -133,9 +133,11 @@ while (True):
         # Log current data to a csv
         log_str = ""
         for idx, datum in enumerate(data):
-            log_str += "%s," % datum
-            if idx == n_data-1:  # if last data point, add line break
-                print ""
+            log_str += "%s" % datum
+            if idx == n_data-1:
+                log_str += "\n"
+            else:
+                log_str += ","
 
         # Log data to and flush file
         LOG_FILE.write(log_str)
