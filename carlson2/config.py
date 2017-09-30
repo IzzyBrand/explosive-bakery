@@ -33,7 +33,7 @@ NOPE      = "0"  # I got your command, but I'm not executing it
 ###############################################################################
 
 log_folder   = "logs"
-video_folder = "videos"
+video_folder = "/home/pi/videos"
 capture_res  = (1920, 1080)
 sample_rate  = 50  # sample rate in Hz
 telem_rate   = 5   # not Hz! Telem data is sent every 'telem_rate' samples
