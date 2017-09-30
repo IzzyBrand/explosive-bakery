@@ -13,3 +13,6 @@
 *.mov
 Dropbox
 *.pdf
+
+*.csv
+*.h264
