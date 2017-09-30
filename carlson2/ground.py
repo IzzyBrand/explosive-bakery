@@ -67,13 +67,6 @@ commands = {
         "parameter": "a",
         "help": "Arm the rocket."
     },
-    config.CHECK: {
-        "say": "Initiating self-check of sensor readings.",
-        "success": "Sensor values OK.",
-        "function": send_telem,
-        "parameter": "c",
-        "help": "Tell rocket to verify that its sensor readings make sense."
-    },
     config.DEPLOY: {
         "say": "Deploying parachute.",
         "success": "Rocket deployed chute.",
@@ -99,6 +92,12 @@ commands = {
         "function": quit,
         "parameter": None,
         "help": "Quit."
+    },
+    config.NOPE: {
+        "say": "Nope, sorry I ain't gonna do dat.",
+        "function": None,
+        "parameter": None,
+        "help": "Response from Carlson if command cannot be executed."
     }
 }
 
@@ -132,17 +131,16 @@ while (True):
             if arg == config.HELP or arg == config.QUIT or (is_armed and arg in commands):
                 cmd_info = commands[arg]
                 print cmd_info["say"]
-                if cmd_info["parameter"] is None:
-                    cmd_info["function"]()
-                else:    
-                    cmd_info["function"](cmd_info["parameter"])
+                if cmd_info["function"] is not None:
+                    if cmd_info["parameter"] is None:
+                        cmd_info["function"]()
+                    else:
+                        cmd_info["function"](cmd_info["parameter"])
             elif not is_armed:
                 if arg == config.ARM:  # allow rocket to be armed
                     send_telem(arg)
                 else:
                     print "Rocket must be armed before sending commands."
-            elif arg == "":
-                pass
             else:
                 print "Command '%s' not recognized. Type '%s' for help." % (arg, config.HELP)
 
@@ -157,7 +155,7 @@ while (True):
             print commands[response]["success"]
             print "===== End transmission ====="
             # Did we receive a response to the command we sent?
-            if response in commands and response == current_cmd:
+            if response in commands and (response == current_cmd or response == config.NOPE):
                 got_response = True
         elif response == config.HEARTBEAT:
             last_heartbeat = time()

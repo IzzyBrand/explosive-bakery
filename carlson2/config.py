@@ -20,11 +20,11 @@ heartbeat_max_delay = 3    # (s) max delay between heartbeats before panic
 # Telemetry commands
 HEARTBEAT = "H"
 ARM       = "a"
-CHECK     = "c"
 DEPLOY    = "d"
 STOP      = "x"
 HELP      = "h"
 QUIT      = "q"
+NOPE      = "0"  # I got your command, but I'm not executing it
 
 ###############################################################################
 ## Data Logging
