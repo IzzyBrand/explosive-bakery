@@ -29,13 +29,15 @@ QUIT      = "q"
 NOPE      = "0"  # I got your command, but I'm not executing it
 
 ###############################################################################
-## Data Logging
+## Data Logging + Video
 ###############################################################################
 
-log_folder  = "logs"
-sample_rate = 50  # sample rate in Hz
-telem_rate  = 5   # not Hz! Telem data is sent every 'telem_rate' samples
-telem_hz    = sample_rate / telem_rate
+log_folder   = "logs"
+video_folder = "videos"
+capture_res  = (1920, 1080)
+sample_rate  = 50  # sample rate in Hz
+telem_rate   = 5   # not Hz! Telem data is sent every 'telem_rate' samples
+telem_hz     = sample_rate / telem_rate
 
 ###############################################################################
 ## Data structures (file save structure and telemetry structure)

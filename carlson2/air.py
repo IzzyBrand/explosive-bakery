@@ -15,6 +15,7 @@ import RTIMU
 from BMP280 import BMP280
 
 import serial, struct, time, math, sys, os
+from picamera import PiCamera
 from datetime import datetime as dt
 
 # Configure serial port where telemetry radio is connected to Carlson
@@ -65,6 +66,12 @@ LOG_FILE = open('%s/%s.csv' % (log_folder, filename), 'a')
 GPIO.setmode(GPIO.BCM) # Broadcom pin-numbering scheme
 GPIO.setup(config.chute_pin, GPIO.OUT) # LED pin set as output
 GPIO.output(config.chute_pin, GPIO.LOW)
+print "GPIO configured, chute pin set to LOW."
+
+# Configure camera
+camera = PiCamera()
+camera.resolution = config.capture_res
+print "Initialized camera to capture at %d*%d px." % config.capture_res
 
 # Configure IMU and barometer
 stgs = RTIMU.Settings(config.RTIMU_calibration_file)  # load calibration file
@@ -102,6 +109,9 @@ while (True):
 
 print "Reading sensor data at %.2f Hz and sending telemetry updates at %.2f Hz!" % (config.sample_rate, config.telem_hz)
 
+camera.start_recording(config.video_folder + "/" + filename + ".h264")
+print "Video recording started."
+
 # Armed state, data logging enabled.
 t0 = time.time()  # get initial time so we can subtract it
 deployed_chute = False
@@ -119,7 +129,8 @@ while (True):
             print "DEPLOYED CHUTE"
             telem.write(command)
         elif deployed_chute and command == config.STOP:
-            print "STOPPED DATA LOGGING"
+            print "STOPPED DATA LOGGING AND VIDEO"
+            camera.stop_recording()
             telem.write(command)  # do this because we break
             break;
         elif command == config.ARM:

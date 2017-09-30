@@ -72,11 +72,11 @@ commands = {
         "help": "Deploy the parachute."
     },
     config.STOP: {
-        "say": "Stopping data logging.",
-        "success": "Rocket stopped data logging.",
+        "say": "Stopping data logging and video capture.",
+        "success": "Rocket stopped data logging and video capture.",
         "function": send_telem,
         "parameter": "x",
-        "help": "Stop logging data to SD card."
+        "help": "Stop recording data and video to SD card."
     },
     config.HELP: {
         "say": "Recognized commands:",
