@@ -17,8 +17,10 @@ time_before_resend  = 0.5  # (s) how long to wait before panicking (send again)
 heartbeat_delay     = 1    # (s) delay between heartbeats
 heartbeat_max_delay = 3    # (s) max delay between heartbeats before panic
 
+# Telemetry commands
 HEARTBEAT = "H"
 ARM       = "a"
+POLL      = "p"
 DEPLOY    = "d"
 STOP      = "x"
 HELP      = "h"

@@ -6,9 +6,6 @@
 #
 # Benjamin Shanahan, Elias Berkowitz, Isaiah Brand
 
-# import sys, getopt
-# sys.path.append(".")
-
 import config
 
 # Import sensor libraries
@@ -18,7 +15,7 @@ from BMP280 import BMP280
 import serial, struct, time, math, sys, os
 from datetime import datetime as dt
 
-## Initiate new logging file
+## Create new logging file
 script_path = os.path.abspath(os.path.expanduser(sys.argv[0]))
 folder = os.path.split(script_path)[0]
 log_folder = '%s/%s' % (folder, config.log_folder)
@@ -46,7 +43,6 @@ if os.path.exists(LOG_PATH):
     sys.exit(0)
 
 LOG_FILE = open('%s/%s.csv' % (log_folder, filename), 'a')
-
 ## End logging file finding/opening
 
 # Configure serial port where telemetry radio is connected to Carlson

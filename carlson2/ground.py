@@ -67,6 +67,13 @@ commands = {
         "parameter": "a",
         "help": "Arm the rocket."
     },
+    config.CHECK: {
+        "say": "Initiating self-check of sensor readings.",
+        "success": "Sensor values OK.",
+        "function": send_telem,
+        "parameter": "c",
+        "help": "Tell rocket to verify that its sensor readings make sense."
+    },
     config.DEPLOY: {
         "say": "Deploying parachute.",
         "success": "Rocket deployed chute.",
@@ -160,12 +167,3 @@ while (True):
     if not got_response and (time() - time_cmd_send > config.time_before_resend):
         print "No response, resending '%s' command." % current_cmd
         send_telem(current_cmd)
-
-
-    # bytestream = telem.read(config.telem_data_struct_size)
-    # if len(bytestream) == config.telem_data_struct_size:
-    #     telem_data = struct.unpack(config.telem_data_struct, bytestream)
-    #     for idx, val in enumerate(telem_data):
-    #         print labels[idx], val
-    #     print "\n"
-    # time.sleep(1/config.telem_rate)
