@@ -72,9 +72,40 @@ imu.setCompassEnable(True)
 print "Carlson booted successfully."
 print "Reading sensor data at %.2f Hz and sending telemetry updates at %.2f Hz!" % (config.sample_rate, config.telem_hz)
 
-t = 0  # time stamp (sample time (sec) = t/sample_rate)
+t               = 0   # time stamp (sample time (sec) = t/sample_rate)
+current_command = ""  # stores last unique command received by rocket
 
+# Stop Carlson and send heartbeats infinitely until we receive the arm command,
+# which will tell Carlson to break from the heartbeat loop and start logging
+# data.
 while (True):
+    telem.write(config.HEARTBEAT)
+    command = telem.read(1)
+    if command == config.ARM:
+        print "ARMED"
+        telem.write(command)  # respond to ground station
+        break;  # go into armed state
+    sleep(config.heartbeat_delay)
+
+# Armed state, data logging enabled.
+t0 = time.time()  # get initial time so we can subtract it
+while (True):
+
+    # Read incoming command over telemetry
+    command = telem.read(1)
+    if command != "" and command != current_command:
+        current_command = command
+        if command == config.DEPLOY:
+            print "DEPLOYED CHUTE"
+        elif command == config.STOP:
+            print "STOPPED DATA LOGGING"
+            break;
+        elif command == config.ARM:
+            print "ROCKET ALREADY ARMED"
+        else:
+            print "UNRECOGNIZED COMMAND"
+        # Respond to ground station
+        telem.write(command)
 
     # Read data from sensors
     if imu.IMURead():
@@ -88,25 +119,24 @@ while (True):
         temperature, pressure = baro.read_temperature_pressure()
         altitude = baro.read_altitude()
 
-        # # Pack file data structure
-        data = [t, fusion[0], fusion[1],  fusion[2],
+        # Pack file data structure
+        data = [time.time()-t0, 
+                fusion[0],   fusion[1],  fusion[2],
                 compass[0],  compass[1], compass[2],
                 accel[0],    accel[1],   accel[2],
                 gyro[0],     gyro[1],    gyro[2],
                 temperature, pressure,   altitude]
         
-        # log current data to a csv
-        log_str = ''
+        # Log current data to a csv
+        log_str = ""
         for datum in data:
-            log_str += '%s,' % data
+            log_str += "%s," % datum
 
-
+        # Log data to and flush file
         LOG_FILE.write(log_str)
         LOG_FILE.flush()
 
-        # Read and respond to commands from telemetry
-
     # Wait a bit before taking the next sample
     time.sleep(1.0/config.sample_rate)
-    t = t + 1  # increment sample timestamp
 
+print "Carlson shut down."

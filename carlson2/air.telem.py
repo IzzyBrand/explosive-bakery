@@ -50,5 +50,5 @@ while (True):
             print "ROCKET ALREADY ARMED"
         else:
             print "UNRECOGNIZED COMMAND"
-    # Respond to ground station
-    telem.write(command)
+        # Respond to ground station
+        telem.write(command)
