@@ -23,7 +23,7 @@ import Queue
 from time import time, sleep
 
 telem = serial.Serial(port=config.port, baudrate=config.baud, timeout=config.serial_timeout)
-print "Telemetry radio found."
+print "Initialized telemetry on port %s at baud %d." % (config.port, config.baud)
 
 commands      = dict
 time_cmd_send = 0

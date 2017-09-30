@@ -57,12 +57,13 @@ print "Initialized telemetry on port %s at baud %d." % (config.port, config.baud
 stgs = RTIMU.Settings(config.RTIMU_calibration_file)  # load calibration file
 imu  = RTIMU.RTIMU(stgs)
 baro = BMP280.BMP280()
+print "BMP280 init succeeded"
 
 # Initialize IMU
 if (not imu.IMUInit()):
-    print("IMU Init Failed")
+    print "IMU init failed"
 else:
-    print("IMU Init Succeeded")
+    print "IMU init succeeded"
 
 imu.setSlerpPower(0.02)
 imu.setGyroEnable(True)
