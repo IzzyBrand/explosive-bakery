@@ -9,7 +9,7 @@
 # Benjamin Shanahan, Elias Berkowitz, Isaiah Brand
 
 import config
-
+import RPi.GPIO as GPIO
 # Import sensor libraries
 import RTIMU
 from BMP280 import BMP280
@@ -61,6 +61,10 @@ if os.path.exists(LOG_PATH):
 LOG_FILE = open('%s/%s.csv' % (log_folder, filename), 'a')
 ## End logging file finding/opening
 
+# GPIO setup
+GPIO.setmode(GPIO.BCM) # Broadcom pin-numbering scheme
+GPIO.setup(config.chute_pin, GPIO.OUT) # LED pin set as output
+GPIO.output(config.chute_pin, GPIO.LOW)
 
 # Configure IMU and barometer
 stgs = RTIMU.Settings(config.RTIMU_calibration_file)  # load calibration file
@@ -108,8 +112,10 @@ while (True):
     if command != "" and command != current_command:
         current_command = command
         if command == config.DEPLOY:
-            # gpio here
-            deployed_chute = True
+            
+	    GPIO.output(config.chute_pin, GPIO.HIGH)
+	    chute_time = time.time()
+	    deployed_chute = True
             print "DEPLOYED CHUTE"
             telem.write(command)
         elif deployed_chute and command == config.STOP:
@@ -122,6 +128,9 @@ while (True):
         else:
             print "UNRECOGNIZED COMMAND"
             telem.write(config.NOPE)
+    
+    if deployed_chute and GPIO.input(config.chute_pin) and time.time() - chute_time > config.blast_cap_burn_time:
+	GPIO.output(config.chute_pin, GPIO.LOW)
 
     # Read data from sensors
     if imu.IMURead():
