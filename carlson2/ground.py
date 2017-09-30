@@ -19,11 +19,8 @@ import struct
 import sys
 import threading
 import Queue
-
+import argparse
 from time import time, sleep
-
-telem = serial.Serial(port=config.port, baudrate=config.baud, timeout=config.serial_timeout)
-print "Initialized telemetry on port %s at baud %d." % (config.port, config.baud)
 
 commands      = dict
 time_cmd_send = 0
@@ -105,9 +102,19 @@ commands = {
 ## Input Buffer
 ###############################################################################
 
+parser = argparse.ArgumentParser(description='''
+        This is the ground station for the carlson2 rocket flight computer.
+        ''')
+parser.add_argument('-p', '--port', default=config.port,
+    help='the serial port of the telem radio')
+args = parser.parse_args()
+
 print "Ground station boot successful. Type '%s' for help." % config.HELP
+telem = serial.Serial(port=args.port, baudrate=config.baud, timeout=config.serial_timeout)
+print "Initialized telemetry on port %s at baud %d." % (args.port, config.baud)
 raw_input("Press ENTER once rocket is powered on.")
 print ""
+
 
 # Add Queue and launch a thread to monitor user input.
 input_queue = Queue.Queue()
