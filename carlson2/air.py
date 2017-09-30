@@ -85,7 +85,7 @@ while (True):
         print "ARMED"
         telem.write(command)  # respond to ground station
         break;  # go into armed state
-    sleep(config.heartbeat_delay)
+    time.sleep(config.heartbeat_delay)
 
 # Armed state, data logging enabled.
 t0 = time.time()  # get initial time so we can subtract it
