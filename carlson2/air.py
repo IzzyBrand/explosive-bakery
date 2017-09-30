@@ -35,9 +35,9 @@ for f in [x for x in os.listdir(log_folder) if x.endswith('.csv')]:
 date_str = dt.now().strftime('%y-%m-%d')
 
 if last_launch + 1 < 10:
-    filename = '0%s_%s' % (date_str, last_launch + 1)
+    filename = '0%s_%s' % (last_launch + 1, date_str)
 else:
-    filename = '%s_%s' % (date_str, last_launch + 1)
+    filename = '%s_%s' % (last_launch + 1, date_str)
 
 LOG_PATH = '%s/%s.csv' % (log_folder, filename)
 if os.path.exists(LOG_PATH):
@@ -100,7 +100,6 @@ while (True):
         for datum in data:
             log_str += '%s,' % data
 
-        print log_str
 
         LOG_FILE.write(log_str)
         LOG_FILE.flush()
