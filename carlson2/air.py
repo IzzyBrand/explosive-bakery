@@ -3,8 +3,9 @@
 # Carlson v2
 #
 # This code reads the 10-DOF sensor values every 1/sample_rate seconds and
-# saves them to disk. It also packs them into a C-type struct and sends them
-# over telemetry to the base station (albeit at a lower data rate).
+# saves them to disk. It also listens to commands sent from ground.py over
+# telemetry, and responds to them appropriately, allowing remote triggering
+# of the rocket arming, chute deployment, and shutdown.
 #
 # Benjamin Shanahan, Elias Berkowitz, Isaiah Brand
 
@@ -114,6 +115,8 @@ print "Reading sensor data at %.2f Hz and sending telemetry updates at %.2f Hz!"
 if camera_enabled: 
     camera.start_recording(config.video_folder + "/" + filename + ".h264")
     print "Video recording started."
+else:
+    print "Camera not enabled."
 
 # Armed state, data logging enabled.
 t0 = time.time()  # get initial time so we can subtract it
