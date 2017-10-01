@@ -48,10 +48,7 @@ for f in [x for x in os.listdir(log_folder) if x.endswith('.csv')]:
 
 date_str = dt.now().strftime('%y-%m-%d')
 
-if last_launch + 1 < 10:
-    filename = '0%s_%s' % (last_launch + 1, date_str)
-else:
-    filename = '%s_%s' % (last_launch + 1, date_str)
+filename = '%02d_%s' % (last_launch + 1, date_str)
 
 LOG_PATH = '%s/%s.csv' % (log_folder, filename)
 if os.path.exists(LOG_PATH):
@@ -69,9 +66,14 @@ GPIO.output(config.chute_pin, GPIO.LOW)
 print "GPIO configured, chute pin set to LOW."
 
 # Configure camera
-camera = PiCamera()
-camera.resolution = config.capture_res
-print "Initialized camera to capture at %d*%d px." % config.capture_res
+try:
+    camera = PiCamera()
+    camera.resolution = config.capture_res
+    print "Initialized camera to capture at %d*%d px." % config.capture_res
+    camera_enabled = True
+except:
+    print "Failed to init picamera."
+    camera_enabled = False
 
 # Configure IMU and barometer
 stgs = RTIMU.Settings(config.RTIMU_calibration_file)  # load calibration file
@@ -109,7 +111,7 @@ while (True):
 
 print "Reading sensor data at %.2f Hz and sending telemetry updates at %.2f Hz!" % (config.sample_rate, config.telem_hz)
 
-camera.start_recording(config.video_folder + "/" + filename + ".h264")
+if camera_enabled: camera.start_recording(config.video_folder + "/" + filename + ".h264")
 print "Video recording started."
 
 # Armed state, data logging enabled.
@@ -130,7 +132,7 @@ while (True):
             telem.write(command)
         elif deployed_chute and command == config.STOP:
             print "STOPPED DATA LOGGING AND VIDEO"
-            camera.stop_recording()
+            if camera_enabled: camera.stop_recording()
             telem.write(command)  # do this because we break
             break;
         elif command == config.ARM:
