@@ -72,20 +72,20 @@ try:
     print "Initialized camera to capture at %d*%d px." % config.capture_res
     camera_enabled = True
 except:
-    print "Failed to init picamera."
+    print "Failed to initialize camera."
     camera_enabled = False
 
 # Configure IMU and barometer
 stgs = RTIMU.Settings(config.RTIMU_calibration_file)  # load calibration file
 imu  = RTIMU.RTIMU(stgs)
 baro = BMP280.BMP280()
-print "BMP280 init succeeded"
+print "BMP280 initialize succeeded"
 
 # Initialize IMU
 if (not imu.IMUInit()):
-    print "IMU init failed"
+    print "IMU initialize failed"
 else:
-    print "IMU init succeeded"
+    print "IMU initialize succeeded"
 
 imu.setSlerpPower(0.02)
 imu.setGyroEnable(True)
@@ -111,8 +111,9 @@ while (True):
 
 print "Reading sensor data at %.2f Hz and sending telemetry updates at %.2f Hz!" % (config.sample_rate, config.telem_hz)
 
-if camera_enabled: camera.start_recording(config.video_folder + "/" + filename + ".h264")
-print "Video recording started."
+if camera_enabled: 
+    camera.start_recording(config.video_folder + "/" + filename + ".h264")
+    print "Video recording started."
 
 # Armed state, data logging enabled.
 t0 = time.time()  # get initial time so we can subtract it
