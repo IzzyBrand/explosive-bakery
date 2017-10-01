@@ -128,7 +128,6 @@ while (True):
     if command != "" and command != current_command:
         current_command = command
         if command == config.DEPLOY:
-            
 	    GPIO.output(config.chute_pin, GPIO.HIGH)
 	    chute_time = time.time()
 	    deployed_chute = True
@@ -158,8 +157,8 @@ while (True):
         compass  = imu_data["compass"]
         accel    = imu_data["accel"]
         gyro     = imu_data["gyro"]
-        temperature, pressure = baro.read_temperature_pressure()
-        altitude = baro.read_altitude()
+        #temperature, pressure = 0,0 #baro.read_temperature_pressure()
+        #altitude = baro.read_altitude()
 
         # Pack file data structure
         data = [time.time()-t0, 
@@ -167,9 +166,9 @@ while (True):
                 compass[0],  compass[1], compass[2],
                 accel[0],    accel[1],   accel[2],
                 gyro[0],     gyro[1],    gyro[2],
-                temperature, pressure,   altitude,
+                #temperature, pressure,   altitude,
                 current_command]
-        n_data = 17  # hard-coded cuz faster
+        n_data = 14  # hard-coded cuz faster
 
         # Log current data to a csv
         log_str = ""
