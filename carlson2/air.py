@@ -110,7 +110,7 @@ while (True):
         break;  # go into armed state
     time.sleep(config.heartbeat_delay)
 
-print "Reading sensor data at %.2f Hz and sending telemetry updates at %.2f Hz!" % (config.sample_rate, config.telem_hz)
+print "Started logging sensor data."
 
 if camera_enabled: 
     camera.start_recording(config.video_folder + "/" + filename + ".h264")
