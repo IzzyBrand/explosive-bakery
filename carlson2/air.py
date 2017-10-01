@@ -185,6 +185,6 @@ while (True):
         LOG_FILE.flush()
 
     # Wait a bit before taking the next sample
-    time.sleep(1.0/config.sample_rate)
+    # time.sleep(1.0/config.sample_rate)
 
 print "Carlson shut down."
