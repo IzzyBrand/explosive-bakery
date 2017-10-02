@@ -1,0 +1,47 @@
+- Make a stack
+- Nickel Chromium Wire
+- Stronger parachute strings
+- Calibrate
+- Live plotting script
+- Wifi in rocket?
+- Motor casing lower OD
+- Buy more E12-0 Motors
+- Put clips on with tube aligned
+- Better joints between sections
+- Better joining tape
+
+
+Launch Checklist (materials):
+    FLIGHT COMPUTER
+        - *2 paired radio
+        - Flight computer
+        - IMU
+        - *3 charged LIPO
+        - *2 switch
+        - Servo
+        - Extra wire
+        - Wire strippers
+    
+    PARACHUTE
+        - Parachute
+        - Blast cap
+        - Ground water-method fuel (mortal+pestle coming in)
+        - !Nickel Chromium Wire!
+        - P-Cord (need to buy)
+        - Nose cone
+
+    ROCKET
+        - Motor
+        - Motor casing
+        - Tube towns
+        - Burrito
+        - *3 fins
+        - Fin casing
+        - *3 joint connectors
+        - Good tape for joints
+        - Counterweight for non-computer rocket
+
+    OTHER
+        - DSLR
+        - Drone
+        - Charged computer
