@@ -34,7 +34,7 @@ class Sensor:
 
     RTIMU_INI_FILE      = "RTIMULib"
     CHUTE_PIN           = 4
-    BLAST_CAP_BURN_TIME = 5
+    BLAST_CAP_BURN_TIME = 3  # seconds
 
 ###############################################################################
 ## Telemetry
