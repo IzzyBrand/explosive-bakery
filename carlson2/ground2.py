@@ -37,8 +37,10 @@ def add_input(input_queue):
     while True:
         input_queue.put(sys.stdin.read(1))
 
-def send_telem(cmd=None):
-    telem.write(cmd)
+def broadcast(cmd=None):
+    if cmd is not None:
+        telemetry.write(chr(cmd))
+
     # global got_response, current_cmd, time_cmd_send
     # if (cmd is not None and got_response) or (not got_response and cmd == current_cmd):
     #     telem.write(cmd)
@@ -99,13 +101,13 @@ parser = argparse.ArgumentParser(description='''
         This is the ground station for the carlson2 rocket flight computer.
         ''')
 parser.add_argument('-p', '--port', default=Telemetry.PORT,
-    help='the serial port of the telem radio')
+    help='the serial port of the telemetry radio')
 args = parser.parse_args()
 
 print "Ground station boot successful." #Type '%s' for help." % Telemetry.HELP
-telem = serial.Serial(port=args.port, baudrate=Telemetry.BAUD, timeout=Telemetry.SERIAL_TIMEOUT)
+telemetry = serial.Serial(port=args.port, baudrate=Telemetry.BAUD, timeout=Telemetry.SERIAL_TIMEOUT)
 print "Initialized telemetry on port %s at baud %d." % (args.port, Telemetry.BAUD)
-raw_input("Press ENTER once rocket is powered on.")
+# raw_input("Press ENTER once rocket is powered on.")
 print ""
 
 # Add Queue and launch a thread to monitor user input.
@@ -121,7 +123,28 @@ while (True):
     if not input_queue.empty():
         arg = input_queue.get().lower().strip()
         if arg != "":   # and arg in commands:
-            send_telem(arg)
+            # Arm
+            if arg == "a":
+                print "arm"
+                broadcast(State.ARM)
+            # Disarm
+            if arg == "d":
+                print "disarm"
+                broadcast(State.IDLE)
+            # Ready for launch
+            if arg == "l":
+                print "ready for launch"
+                broadcast(State.ARM + State.RECORD_DATA + State.RECORD_VIDEO)
+            # Deploy chute
+            if arg == "c":
+                print "deploy chute"
+                broadcast(State.ARM + State.RECORD_DATA + State.RECORD_VIDEO + State.DEPLOY_CHUTE)
+            # Shutdown Carlson
+            if arg == "k":
+                print "power off"
+                broadcast(State.POWER_OFF)
+
+            # 
             # # Get info about the command
             # cmd_info = commands[arg]
             # print cmd_info["say"]
@@ -149,13 +172,11 @@ while (True):
             #     print "Command '%s' not recognized. Type '%s' for help." % (arg, config.HELP)
 
     # Read (non-blocking) from telemetry radio
-    state = telem.read(1)
+    state = telemetry.read(1)
 
     if state != "":
-        print ""
-        print "=== Carlson state ==="
-        print state
-        print "====================="
+        state = ord(state)
+        print "Air state: %d" % state
 
     # # Update heartbeat timer (if rocket is unarmed)
     # if not is_armed:
