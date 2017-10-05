@@ -1,30 +1,67 @@
+###############################################################################
+## Rocket States
+###############################################################################
+
 class State:
 
-    ###############################################################################
-    ## Rocket States
-    ###############################################################################
+    def __init__(self):
 
-    IDLE              = 0    # default state on rocket boot
+        # Define states and their bit positions
+        self.IDLE          = 0    # default state on rocket boot
 
-    ARM               = 1    # arm / disarm rocket and allow other functionality
-    ARM_BIT           = 0    # bit position
+        self.ARM           = 1    # arm / disarm rocket and allow other functionality
+        self.ARM_BIT       = 0    # bit position
 
-    RECORD_DATA       = 2    # start / stop recording sensor data to disk
-    RECORD_DATA_BIT   = 1 
+        self.DATA          = 2    # start / stop recording sensor data to disk
+        self.DATA_BIT      = 1 
 
-    RECORD_VIDEO      = 4    # start / stop camera capture
-    RECORD_VIDEO_BIT  = 2
+        self.VIDEO         = 4    # start / stop camera capture
+        self.VIDEO_BIT     = 2
 
-    DEPLOY_CHUTE      = 8    # toggle parachute GPIO pin
-    DEPLOY_CHUTE_BIT  = 3
+        self.CHUTE         = 8    # toggle parachute GPIO pin
+        self.CHUTE_BIT     = 3
 
-    POWER_OFF         = 16   # shut down computer (last possible state)
-    POWER_OFF_BIT     = 4 
+        self.POWER_OFF     = 16   # shut down computer (last possible state)
+        self.POWER_OFF_BIT = 4 
 
-    # Retrieve value of bit at index in given byte. Return True if bit is 1.
-    @staticmethod
-    def get_bit(byte_val, idx):
-        return ((byte_val & (1 << idx)) != 0);
+        # Define state value holder
+        self.state = self.IDLE
+
+    # Set state
+    def set(self, new_state):
+        self.state = new_state
+
+    # Add state (input each state as separate parameter)
+    def add(self, *new_states):
+        for new_state in new_states:
+            self.state += new_state
+
+    # Remove state
+    def remove(self, *new_states):
+        for new_state in new_states:
+            self.state -= new_state
+
+    # Retrieve value of bit at index in state. Return True if bit is 1. If a
+    # value for byte is specified, the bit is checked in that, not in state.
+    def get_bit(self, idx, byte=None):
+        if byte is None:
+            return ((self.state & (1 << idx)) != 0);
+        else:
+            return ((byte & (1 << idx)) != 0);
+
+    # Return state as string
+    def __str__(self):
+        # If we are idle, return
+        if self.state == self.IDLE:
+            return "Idle"
+        # Otherwise, parse out the flags
+        ret = ""
+        if self.get_bit(self.ARM_BIT):       ret += "Armed + "
+        if self.get_bit(self.DATA_BIT):      ret += "Recording Data + "
+        if self.get_bit(self.VIDEO_BIT):     ret += "Recording Video + "
+        if self.get_bit(self.CHUTE_BIT):     ret += "Deployed Chute + "
+        if self.get_bit(self.POWER_OFF_BIT): ret += "Powering Off + "
+        return ret[:-3]
 
 ###############################################################################
 ## Sensors and IO

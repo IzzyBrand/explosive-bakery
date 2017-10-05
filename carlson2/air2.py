@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     # Set current state of air controller and declare the time we last sent a 
     # state update to the ground station
-    state           = State.IDLE
+    s               = State()
     state_last_sent = 0
 
     # Timing variables
@@ -58,11 +58,11 @@ if __name__ == "__main__":
             new_state = ord(new_state)  # convert from char to int
 
             # Set flags for incoming new state
-            arm          = State.get_bit(new_state, State.ARM_BIT)
-            record_video = State.get_bit(new_state, State.RECORD_VIDEO_BIT)
-            record_data  = State.get_bit(new_state, State.RECORD_DATA_BIT)
-            deploy_chute = State.get_bit(new_state, State.DEPLOY_CHUTE_BIT)
-            power_off    = State.get_bit(new_state, State.POWER_OFF_BIT)
+            arm       = s.get_bit(byte=new_state, s.ARM_BIT)
+            video     = s.get_bit(byte=new_state, s.VIDEO_BIT)
+            data      = s.get_bit(byte=new_state, s.DATA_BIT)
+            chute     = s.get_bit(byte=new_state, s.CHUTE_BIT)
+            power_off = s.get_bit(byte=new_state, s.POWER_OFF_BIT)
 
             ### Arm rocket ###
             if arm:
@@ -75,7 +75,7 @@ if __name__ == "__main__":
                     print "disarmed"
 
             ### Data logging ###
-            if record_data:
+            if data:
                 if not _data_on:
                     _data_on = True
                     print "started data"
@@ -85,7 +85,7 @@ if __name__ == "__main__":
                     print "stopped data"
 
             ### Video capture ###
-            if record_video:
+            if video:
                 if not _video_on:
                     # camera.start_recording()
                     _video_on = True
@@ -97,7 +97,7 @@ if __name__ == "__main__":
                     print "stopped video"
 
             ### Deploy chute ###
-            if deploy_chute:
+            if chute:
                 if not _chute_deployed and _armed:
                     _chute_deployed = True
                     time_chute_deployed = time.time()
@@ -128,10 +128,10 @@ if __name__ == "__main__":
 
         # Update ground station once per HEARTBEAT_DELAY
         if time.time() - state_last_sent > Telemetry.HEARTBEAT_DELAY:
-            state = 0  # clear state and rebuild
-            if _armed:          state += State.ARM
-            if _data_on:        state += State.RECORD_DATA
-            if _video_on:       state += State.RECORD_VIDEO
-            if _chute_deployed: state += State.DEPLOY_CHUTE
-            telemetry.write(chr(state))
+            s.set(s.IDLE)  # clear state and rebuild
+            if _armed:          s.add(s.ARM)
+            if _data_on:        s.add(s.DATA)
+            if _video_on:       s.add(s.VIDEO)
+            if _chute_deployed: s.add(s.CHUTE)
+            telemetry.write(chr(s.state))
             state_last_sent = time.time()
