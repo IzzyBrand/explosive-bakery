@@ -112,7 +112,7 @@ if __name__ == "__main__":
 
             ### Power off ###
             if power_off:
-                if not _armed and not _logging_on and not _video_on:
+                if not _armed and not _logging_on:
                     print "powering off"
                     time.sleep(3)  # give everything a chance to die
                     os.system("poweroff")
