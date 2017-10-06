@@ -22,14 +22,10 @@ CAPTURE_RES = (1920, 1080)  # in pixels
 class Logger:
 
     def __init__(self):
-        # Initialize a new logging file
         self.file = None
         self.filename = None
-        if not self._init_new_logfile(): exit()
-
-        # Initialize the Pi camera if we can find it
         self.camera = None
-        self.camera_enabled = self._init_camera()
+        self.camera_enabled = False
 
     def start_video(self):
         if self.camera_enabled: 
@@ -60,7 +56,7 @@ class Logger:
 
     # Stop logger. This consists of closing the open file descriptor and 
     # stopping our video stream.
-    def stop(self):
+    def stop_all(self):
         # Flush and close file
         self.file.flush()
         self.file.close()

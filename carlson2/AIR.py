@@ -14,6 +14,7 @@ from sensor import Sensor
 from gpio import Pin
 
 HEARTBEAT_DELAY = 1  # seconds, how often do we send state to ground station
+BLAST_CAP_BURN_TIME = 5  # seconds, how long to keep relay shorted for
 
 if __name__ == "__main__":
 
@@ -48,7 +49,8 @@ if __name__ == "__main__":
     chute_pin = Pin(4)
 
     # Define logger but don't instantiate it here
-    logger = None
+    logger = Logger()
+    logger._init_camera()
 
     # Main loop
     t0 = 0
@@ -87,7 +89,7 @@ if __name__ == "__main__":
                     # Initialize logger, which will create a new log file and
                     # set up the camera so we're ready to record. Start the
                     # camera too.
-                    logger = Logger()
+                    logger._init_new_logfile()
                     logger.start_video()
                     t0 = time.time()  # reset reference time
                     _logging_on = True
@@ -95,7 +97,7 @@ if __name__ == "__main__":
             else:
                 if _logging_on:
                     # Stop data and camera and safely close logfile on disk.
-                    logger.stop()
+                    logger.stop_all()
                     _logging_on = False
                     print "stopped logger"
 
@@ -129,7 +131,7 @@ if __name__ == "__main__":
                     data["gyro"][0],       data["gyro"][1],       data["gyro"][2]])
 
         # Set chute pin back to LOW if burn time is reached
-        if _chute_deployed and (time.time() - time_chute_deployed > Sensor.BLAST_CAP_BURN_TIME):
+        if _chute_deployed and (time.time() - time_chute_deployed > BLAST_CAP_BURN_TIME):
             chute_pin.set_low()
             _chute_deployed = False
             print "set chute pin to HIGH"
