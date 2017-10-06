@@ -19,8 +19,7 @@ if __name__ == "__main__":
 
     # Latches
     arm             = False
-    record_video    = False
-    record_data     = False
+    logging         = False
     deploy_chute    = False
     power_off       = False
     _armed          = False
@@ -110,7 +109,7 @@ if __name__ == "__main__":
 
             ### Power off ###
             if power_off:
-                if not _armed and not _data_on and not _video_on:
+                if not _armed and not _logging_on and not _video_on:
                     print "powering off"
                     time.sleep(3)  # give everything a chance to die
 
