@@ -115,7 +115,7 @@ if __name__ == "__main__":
                 if not _armed and not _logging_on:
                     print "powering off"
                     time.sleep(3)  # give everything a chance to die
-                    os.system("poweroff")
+                    os.system("sudo poweroff")
 
         #######################################################################
         ## Do repeated actions depending on latches
