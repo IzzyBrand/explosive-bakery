@@ -27,7 +27,7 @@ class Sensor:
 
     def _init_imu(self):
         # Configure IMU and barometer
-        self.settings = RTIMU.Settings(RTIMU_INI_FILE)  # load calibration file
+        self.settings = RTIMU.Settings(RTIMU_INI_FILE)  # calibration file
         self.imu = RTIMU.RTIMU(self.settings)
         if (not self.imu.IMUInit()):
             print "IMU failed to initialize!"

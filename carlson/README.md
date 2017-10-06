@@ -2,6 +2,18 @@
 
 Carlson is a Raspberry Pi Zero based rocket flight computer with an MPU9255 IMU, BMP280 barometer, 1080p video camera, WiFi chip, and 915 MHz telemetry radio. It runs on a two-cell lithium polymer battery. Carlson will eventually control automatic apogee detection in flight and parachute deployment.
 
+## Installation ##
+
+**GROUND**
+
+    $ pip install -r requirements/ground.txt
+
+**AIR**
+
+Follow directions under *Additional Repositories* below to compile and install sensor libraries. Then,
+
+    $ pip install -r requirements/air.txt
+
 ## AIR station ##
 
 Python state machine running on the Raspberry Pi in the rocket that starts and stops data / video logging and can detonate the parachute ejection blast cap in flight. This script sends periodic updates to the GROUND station via telemetry at 1 Hz and listens for incoming state transition commands from GROUND. 
@@ -16,7 +28,7 @@ Coming soon. For now, just check out the GROUND.py source code.
 
 ## Additional Repositories ##
 
-These repositories have been forked so that we can modify them as required. They both require compilation before they can be used.
+These repositories have been forked so that we can modify them as required. They both require compilation and installation before they can be used.
 
 ### Accel/Gyro/Magnet ###
 
@@ -35,14 +47,10 @@ This is just a C++ python library that needs to be compiled. Run:
 
 ## Telemetry Link ##
 
-We are using a pair of 915 MHz 3DR telemetry radios to communicate between the rocket with Carlson and our wireless base-station or laptop running the Python logging manager. This radio link allows data to be transmitted back to the ground from Carlson in-flight, giving us close-to-realtime estimates of attitude, orientation in space, and eventually velocity. This communication tunnel is two way, allowing us to manually deploy the parachute by sending a command back to Carlson inside of the rocket.
-
-## Additional Notes ##
-
-We may want to eventually integrate the Barometer code into RTIMULib2 so that we can perform all sensor readings at a closer timestep. For now it's probably fine to keep them as separate Python libraries.
+We are using a pair of 915 MHz 3DR telemetry radios to communicate between AIR and GROUND. This radio link enables two-way communication between the AIR and GROUND stations.
 
 ## To Do ##
 
 1. Calibrate IMU before next flight (check orientation flags for mounting in rocket)
-2. Add requirements.txt (one for AIR station requirements, and one for GROUND station requirements).
+2. Update requirements/air.txt
 3. Incorporate barometer data

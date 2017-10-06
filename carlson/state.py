@@ -15,11 +15,11 @@ class State:
         self.LOGGING       = 2    # start / stop logging sensor and camera data
         self.LOGGING_BIT   = 1 
 
-        self.CHUTE         = 8    # toggle parachute GPIO pin
-        self.CHUTE_BIT     = 3
+        self.CHUTE         = 4    # toggle parachute GPIO pin
+        self.CHUTE_BIT     = 2
 
-        self.POWER_OFF     = 16   # shut down computer (last possible state)
-        self.POWER_OFF_BIT = 4 
+        self.POWER_OFF     = 8    # shut down computer (last possible state)
+        self.POWER_OFF_BIT = 3 
 
         # Define state value holder
         self.state = self.IDLE

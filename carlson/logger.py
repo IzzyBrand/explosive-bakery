@@ -15,15 +15,24 @@ ROOT      = "/home/pi/explosive-bakery/carlson2/"
 LOG_DIR   = ROOT + "log/"
 VIDEO_DIR = ROOT + "video/"
 EXT       = "csv"
+VIDEO_EXT = "h264"
 
 # Video-specific parameters
 CAPTURE_RES = (1920, 1080)  # in pixels
 
 class Logger:
 
+    def __init__(self, init_logfile=True, init_camera=True):
+        self.file           = None
+        self.filename       = None
+        self.camera         = None
+        self.camera_enabled = False
+        if init_logfile: self._init_new_logfile()
+        if init_camera:  self._init_camera()
+
     def start_video(self):
         if self.camera_enabled: 
-            self.camera.start_recording(VIDEO_DIR + self.filename + ".h264")
+            self.camera.start_recording(VIDEO_DIR + self.filename + "." + VIDEO_EXT)
             print "Started video capture."
 
     def stop_video(self):

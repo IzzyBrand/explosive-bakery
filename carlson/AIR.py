@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
-# Version 2 of Carlson air controller and logging system.
+# Carlson AIR station v0.3
 #
-# 4 October 2017, Benjamin Shanahan.  
+# 5 October 2017, Benjamin Shanahan.
 
 import time
 import serial
@@ -19,11 +19,13 @@ BLAST_CAP_BURN_TIME = 5  # seconds, how long to keep relay shorted for
 
 if __name__ == "__main__":
 
-    # Latches
+    # Bit latches
     arm             = False
     logging         = False
     deploy_chute    = False
     power_off       = False
+
+    # Current state latches
     _armed          = False
     _logging_on     = False
     _chute_deployed = False
@@ -46,19 +48,18 @@ if __name__ == "__main__":
     # Initialize the IMU and barometer sensors so that we can read from them
     sensor = Sensor()
 
-    # Initialize the GPIO pins so that we can use them
+    # Initialize the GPIO pins so that we can write them high or low
     chute_pin = Pin(4)
 
-    # Define logger but don't instantiate it here
-    logger = Logger()
-    logger._init_camera()
+    # Define logger but don't initialize a new log file here
+    logger = Logger(init_logfile=False, init_camera=True)
 
     # Main loop
     t0 = 0
     while (True):
 
         #######################################################################
-        ## Interpret state information from ground station
+        ## Interpret state information from GROUND station
         #######################################################################
 
         new_state = radio.read();
@@ -68,21 +69,21 @@ if __name__ == "__main__":
 
             new_state = ord(new_state)  # convert from char to int
 
-            # Set flags for incoming new state
-            arm       = state.get_bit(state.ARM_BIT, new_state)
-            logging   = state.get_bit(state.LOGGING_BIT, new_state)
-            chute     = state.get_bit(state.CHUTE_BIT, new_state)
-            power_off = state.get_bit(state.POWER_OFF_BIT, new_state)
+            # Get bit flags from new state
+            arm       = state.get_bit(state.ARM_BIT, byte=new_state)
+            logging   = state.get_bit(state.LOGGING_BIT, byte=new_state)
+            chute     = state.get_bit(state.CHUTE_BIT, byte=new_state)
+            power_off = state.get_bit(state.POWER_OFF_BIT, byte=new_state)
 
             ### Arm rocket ###
             if arm:
                 if not _armed:
                     _armed = True
-                    print "armed"
+                    print "Armed"
             else:
                 if _armed:
                     _armed = False
-                    print "disarmed"
+                    print "Disarmed"
 
             ### Data logging (sensor data and video) ###
             if logging:
@@ -94,13 +95,13 @@ if __name__ == "__main__":
                     logger.start_video()
                     t0 = time.time()  # reset reference time
                     _logging_on = True
-                    print "started logger"
+                    print "Started logging"
             else:
                 if _logging_on:
-                    # Stop data and camera and safely close logfile on disk.
+                    # Stop data and camera and safely close file on disk.
                     logger.stop_all()
                     _logging_on = False
-                    print "stopped logger"
+                    print "Stopped logging"
 
             ### Deploy chute ###
             if chute:
@@ -108,22 +109,24 @@ if __name__ == "__main__":
                     chute_pin.set_high()
                     _chute_deployed = True
                     time_chute_deployed = time.time()
-                    print "set chute pin to HIGH"
+                    print "Set chute pin to HIGH"
 
             ### Power off ###
             if power_off:
                 if not _armed and not _logging_on:
-                    print "powering off"
+                    print "Powering off"
                     time.sleep(3)  # give everything a chance to die
                     os.system("sudo poweroff")
 
         #######################################################################
-        ## Do repeated actions depending on latches
+        ## Do repeated actions (i.e. read from sensors) depending on latches
         #######################################################################
         
-        # If logging is on, write IMU data to logfile!
+        # If logging is on, write IMU data to logfile! We have yet to implement
+        # sensor logging from the BMP280 because its read speed is slower than
+        # from the IMU.
         if _logging_on:
-            # Read from IMU (no barometer yet)
+            # Read from IMU
             data = sensor.read_imu()
             if data is not None:
                 logger.write([time.time()-t0, state.state,
@@ -132,14 +135,14 @@ if __name__ == "__main__":
                     data["accel"][0],      data["accel"][1],      data["accel"][2],
                     data["gyro"][0],       data["gyro"][1],       data["gyro"][2]])
 
-        # Set chute pin back to LOW if burn time is reached
+        # Set chute pin back to LOW if blast cap burn time is reached
         if _chute_deployed and (time.time() - time_chute_deployed > BLAST_CAP_BURN_TIME):
             chute_pin.set_low()
             _chute_deployed = False
-            print "set chute pin to LOW"
+            print "Set chute pin to LOW"
 
         #######################################################################
-        ## Update ground station
+        ## Update GROUND station
         #######################################################################
 
         # Update ground station once per HEARTBEAT_DELAY
