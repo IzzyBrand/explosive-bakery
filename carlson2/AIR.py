@@ -121,11 +121,12 @@ if __name__ == "__main__":
         if _logging_on:
             # Read from IMU (no barometer yet)
             data = sensor.read_imu()
-            logger.write([time.time()-t0, state.state,
-                data["fusionPose"][0], data["fusionPose"][1], data["fusionPose"][2],
-                data["compass"][0],    data["compass"][1],    data["compass"][2],
-                data["accel"][0],      data["accel"][1],      data["accel"][2],
-                data["gyro"][0],       data["gyro"][1],       data["gyro"][2]])
+            if data is not None:
+                logger.write([time.time()-t0, state.state,
+                    data["fusionPose"][0], data["fusionPose"][1], data["fusionPose"][2],
+                    data["compass"][0],    data["compass"][1],    data["compass"][2],
+                    data["accel"][0],      data["accel"][1],      data["accel"][2],
+                    data["gyro"][0],       data["gyro"][1],       data["gyro"][2]])
 
         # Set chute pin back to LOW if burn time is reached
         if _chute_deployed and (time.time() - time_chute_deployed > Sensor.BLAST_CAP_BURN_TIME):
