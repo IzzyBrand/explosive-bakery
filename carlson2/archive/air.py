@@ -33,32 +33,7 @@ while True:
 
 print "Initialized telemetry on port %s at baud %d." % (config.port, config.baud)
 
-## Create new logging file
-script_path = os.path.abspath(os.path.expanduser(sys.argv[0]))
-folder = os.path.split(script_path)[0]
-log_folder = '%s/%s' % (folder, config.log_folder)
 
-last_launch = 0
-
-for f in [x for x in os.listdir(log_folder) if x.endswith('.csv')]:
-    try:
-        launch_numb = int(f.split('_')[0])
-        last_launch = launch_numb if launch_numb > last_launch else last_launch
-    except ValueError:
-        print 'Warning: Invalid csv file in logs folder (%s)' % f
-
-date_str = dt.now().strftime('%y-%m-%d')
-
-filename = '%02d_%s' % (last_launch + 1, date_str)
-
-LOG_PATH = '%s/%s.csv' % (log_folder, filename)
-if os.path.exists(LOG_PATH):
-    print 'ERROR: Log file already exists (%s)' % LOG_PATH
-    print 'This is probably a code error'
-    sys.exit(0)
-
-LOG_FILE = open('%s/%s.csv' % (log_folder, filename), 'a')
-## End logging file finding/opening
 
 # GPIO setup
 GPIO.setmode(GPIO.BCM) # Broadcom pin-numbering scheme

@@ -7,8 +7,13 @@
 import time
 import serial
 
-from config import State, Telemetry, Sensor, Logging
+from state import State
+from telemetry import Telemetry
+from logger import Logger
+from sensor import Sensor
+from gpio import Pin
 
+HEARTBEAT_DELAY = 1  # seconds, how often do we send state to ground station
 
 if __name__ == "__main__":
 
@@ -19,38 +24,42 @@ if __name__ == "__main__":
     deploy_chute    = False
     power_off       = False
     _armed          = False
-    _data_on        = False
-    _video_on       = False
+    _logging_on     = False
     _chute_deployed = False
 
     # Set current state of air controller and declare the time we last sent a 
     # state update to the ground station
-    s               = State()
+    state           = State()
     state_last_sent = 0
 
     # Timing variables
     time_chute_deployed = 0
 
-    # Keep looping until the telemetry radio connects
-    while True:
-        try:
-            telemetry = serial.Serial(port=Telemetry.PORT,
-                                  baudrate=Telemetry.BAUD,
-                                  timeout=Telemetry.SERIAL_TIMEOUT)
-            print "initialized telemetry radio"
-            break
-        except serial.serialutil.SerialException:
-            print "telemetry not found, trying again"
-            time.sleep(0.5)
+    ###########################################################################
+    ## Initialize our external devices
+    ###########################################################################
+
+    # Initialize telemetry radio for communication with ground station
+    radio = Telemetry()
+
+    # Initialize the IMU and barometer sensors so that we can read from them
+    sensor = Sensor()
+
+    # Initialize the GPIO pins so that we can use them
+    chute_pin = Pin(4)
+
+    # Define logger but don't instantiate it here
+    logger = None
 
     # Main loop
+    t0 = 0
     while (True):
 
         #######################################################################
         ## Interpret state information from ground station
         #######################################################################
 
-        new_state = telemetry.read(1);
+        new_state = radio.read();
         
         # If we got a state command via telemetry, parse it and set latches
         if new_state != "":
@@ -58,11 +67,10 @@ if __name__ == "__main__":
             new_state = ord(new_state)  # convert from char to int
 
             # Set flags for incoming new state
-            arm       = s.get_bit(byte=new_state, s.ARM_BIT)
-            video     = s.get_bit(byte=new_state, s.VIDEO_BIT)
-            data      = s.get_bit(byte=new_state, s.DATA_BIT)
-            chute     = s.get_bit(byte=new_state, s.CHUTE_BIT)
-            power_off = s.get_bit(byte=new_state, s.POWER_OFF_BIT)
+            arm       = state.get_bit(state.ARM_BIT, new_state)
+            logging   = state.get_bit(state.LOGGING_BIT, new_state)
+            chute     = state.get_bit(state.CHUTE_BIT, new_state)
+            power_off = state.get_bit(state.POWER_OFF_BIT, new_state)
 
             ### Arm rocket ###
             if arm:
@@ -74,34 +82,31 @@ if __name__ == "__main__":
                     _armed = False
                     print "disarmed"
 
-            ### Data logging ###
-            if data:
-                if not _data_on:
-                    _data_on = True
-                    print "started data"
+            ### Data logging (sensor data and video) ###
+            if logging:
+                if not _logging_on:
+                    # Initialize logger, which will create a new log file and
+                    # set up the camera so we're ready to record. Start the
+                    # camera too.
+                    logger = Logger()
+                    logger.start_video()
+                    t0 = time.time()  # reset reference time
+                    _logging_on = True
+                    print "started logger"
             else:
-                if _data_on:
-                    _data_on = False
-                    print "stopped data"
-
-            ### Video capture ###
-            if video:
-                if not _video_on:
-                    # camera.start_recording()
-                    _video_on = True
-                    print "started video"
-            else:
-                if _video_on:
-                    # camera.stop_recording()
-                    _video_on = False
-                    print "stopped video"
+                if _logging_on:
+                    # Stop data and camera and safely close logfile on disk.
+                    logger.stop()
+                    _logging_on = False
+                    print "stopped logger"
 
             ### Deploy chute ###
             if chute:
                 if not _chute_deployed and _armed:
+                    chute_pin.set_high()
                     _chute_deployed = True
                     time_chute_deployed = time.time()
-                    print "deployed chute"
+                    print "set chute pin to HIGH"
 
             ### Power off ###
             if power_off:
@@ -113,25 +118,31 @@ if __name__ == "__main__":
         ## Do repeated actions depending on latches
         #######################################################################
         
-        # if _data_on and imu.IMURead():
-        #     # log sensor data to file
-        #     pass
+        # If data is on, log it!
+        if _data_on:
+            # Read from IMU (no barometer yet)
+            data = sensor.read_imu()
+            logger.write([time.time()-t0, state.state,
+                data["fusionPose"][0], data["fusionPose"][1], data["fusionPose"][2],
+                data["compass"][0],    data["compass"][1],    data["compass"][2],
+                data["accel"][0],      data["accel"][1],      data["accel"][2],
+                data["gyro"][0],       data["gyro"][1],       data["gyro"][2]])
 
+        # Set chute pin back to LOW if burn time is reached
         if _chute_deployed and (time.time() - time_chute_deployed > Sensor.BLAST_CAP_BURN_TIME):
+            chute_pin.set_low()
             _chute_deployed = False
-            # ...
-            print "set chute pin to low"
+            print "set chute pin to HIGH"
 
         #######################################################################
         ## Update ground station
         #######################################################################
 
         # Update ground station once per HEARTBEAT_DELAY
-        if time.time() - state_last_sent > Telemetry.HEARTBEAT_DELAY:
-            s.set(s.IDLE)  # clear state and rebuild
-            if _armed:          s.add(s.ARM)
-            if _data_on:        s.add(s.DATA)
-            if _video_on:       s.add(s.VIDEO)
-            if _chute_deployed: s.add(s.CHUTE)
-            telemetry.write(chr(s.state))
+        if time.time() - state_last_sent > HEARTBEAT_DELAY:
+            state.set(state.IDLE)  # clear state and rebuild
+            if _armed:          state.add(state.ARM)
+            if _logging_on:     state.add(state.LOGGING)
+            if _chute_deployed: state.add(state.CHUTE)
+            radio.write(chr(state.state))
             state_last_sent = time.time()

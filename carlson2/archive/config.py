@@ -71,7 +71,7 @@ class Sensor:
 
     RTIMU_INI_FILE      = "RTIMULib"
     CHUTE_PIN           = 4
-    BLAST_CAP_BURN_TIME = 3  # seconds
+    BLAST_CAP_BURN_TIME = 5  # seconds
 
 ###############################################################################
 ## Telemetry
@@ -94,13 +94,3 @@ class Telemetry:
     HELP      = "h"
     QUIT      = "q"
     NOPE      = "0"  # I got your command, but I'm not executing it
-
-###############################################################################
-## Data Logging + Video
-###############################################################################
-
-class Logging:
-
-    LOG_FOLDER   = "logs"
-    VIDEO_FOLDER = "videos"
-    CAPTURE_RES  = (1920, 1080)  # in pixels
