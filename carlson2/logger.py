@@ -21,12 +21,6 @@ CAPTURE_RES = (1920, 1080)  # in pixels
 
 class Logger:
 
-    def __init__(self):
-        self.file = None
-        self.filename = None
-        self.camera = None
-        self.camera_enabled = False
-
     def start_video(self):
         if self.camera_enabled: 
             self.camera.start_recording(VIDEO_DIR + self.filename + ".h264")
@@ -105,8 +99,8 @@ class Logger:
         try:
             self.camera = PiCamera()
             self.camera.resolution = CAPTURE_RES
+            self.camera_enabled = True
             print "Initialized camera to capture at %d*%d px." % CAPTURE_RES
-            return True
         except:
+            self.camera_enabled = False
             print "Failed to initialize camera."
-            return False

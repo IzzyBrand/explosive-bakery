@@ -67,7 +67,7 @@ while (True):
             if arg == "d":
                 print "disarm"
                 broadcast(state.IDLE)
-            # Ready for launch
+            # Start logger (i.e. ready for launch)
             if arg == "l":
                 print "start logging"
                 broadcast(state.ARM + state.LOGGING)
