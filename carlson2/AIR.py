@@ -117,8 +117,8 @@ if __name__ == "__main__":
         ## Do repeated actions depending on latches
         #######################################################################
         
-        # If data is on, log it!
-        if _data_on:
+        # If logging is on, write IMU data to logfile!
+        if _logging_on:
             # Read from IMU (no barometer yet)
             data = sensor.read_imu()
             logger.write([time.time()-t0, state.state,
