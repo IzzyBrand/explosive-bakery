@@ -126,7 +126,6 @@ if __name__ == "__main__":
             # Read from IMU (no barometer yet)
             data = sensor.read_imu()
             if data is not None:
-                print "data!"
                 logger.write([time.time()-t0, state.state,
                     data["fusionPose"][0], data["fusionPose"][1], data["fusionPose"][2],
                     data["compass"][0],    data["compass"][1],    data["compass"][2],
