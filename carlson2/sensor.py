@@ -12,13 +12,12 @@ RTIMU_INI_FILE = "RTIMULib"
 class Sensor:
 
     def __init__(self):
-        self.imu       = None
-        self.barometer = None
         self._init_imu()
         self._init_barometer()
 
     def read_imu(self):
         if self.imu.IMURead():
+            print 'data!'
             return self.imu.getIMUData()
 
     def read_barometer_temperature_pressure(self):
@@ -29,8 +28,8 @@ class Sensor:
 
     def _init_imu(self):
         # Configure IMU and barometer
-        settings = RTIMU.Settings(RTIMU_INI_FILE)  # load calibration file
-        self.imu = RTIMU.RTIMU(settings)
+        self.settings = RTIMU.Settings(RTIMU_INI_FILE)  # load calibration file
+        self.imu = RTIMU.RTIMU(self.settings)
         if (not self.imu.IMUInit()):
             print "IMU failed to initialize!"
         else:
