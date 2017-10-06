@@ -30,10 +30,12 @@ class Logger:
     def start_video(self):
         if self.camera_enabled: 
             self.camera.start_recording(VIDEO_DIR + self.filename + ".h264")
+            print "Started video capture."
 
     def stop_video(self):
         if self.camera_enabled:
             self.camera.stop_recording()
+            print "Stopped video capture."
 
     # Write data to file. Data is specified as a list, and delimeter is used
     # to separate each data point when written. If flush is True, this function

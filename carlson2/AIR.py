@@ -6,6 +6,7 @@
 
 import time
 import serial
+import os
 
 from state import State
 from telemetry import Telemetry
@@ -114,6 +115,7 @@ if __name__ == "__main__":
                 if not _armed and not _logging_on and not _video_on:
                     print "powering off"
                     time.sleep(3)  # give everything a chance to die
+                    os.system("poweroff")
 
         #######################################################################
         ## Do repeated actions depending on latches
@@ -134,7 +136,7 @@ if __name__ == "__main__":
         if _chute_deployed and (time.time() - time_chute_deployed > BLAST_CAP_BURN_TIME):
             chute_pin.set_low()
             _chute_deployed = False
-            print "set chute pin to HIGH"
+            print "set chute pin to LOW"
 
         #######################################################################
         ## Update ground station
