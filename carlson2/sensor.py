@@ -31,16 +31,16 @@ class Sensor:
         # Configure IMU and barometer
         settings = RTIMU.Settings(RTIMU_INI_FILE)  # load calibration file
         self.imu = RTIMU.RTIMU(settings)
-        if (not imu.IMUInit()):
+        if (not self.imu.IMUInit()):
             print "IMU failed to initialize!"
         else:
             print "IMU initialized."
 
         # Configure some IMU specific settings
-        imu.setSlerpPower(0.02)
-        imu.setGyroEnable(True)
-        imu.setAccelEnable(True)
-        imu.setCompassEnable(True)
+        self.imu.setSlerpPower(0.02)
+        self.imu.setGyroEnable(True)
+        self.imu.setAccelEnable(True)
+        self.imu.setCompassEnable(True)
 
     def _init_barometer(self):
         self.barometer = BMP280.BMP280()
