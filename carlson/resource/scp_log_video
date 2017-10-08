@@ -1,0 +1,5 @@
+@echo SCPing all Carlson data to Desktop!
+mkdir ~/Desktop/log
+mkdir ~/Desktop/video
+scp pi@carlson.local:~/explosive-bakery/carlson/log/* ~/Desktop/log
+scp pi@carlson.local:~/explosive-bakery/carlson/video/* ~/Desktop/video
