@@ -1,0 +1,18 @@
+{
+  "date": "08-10-17", 
+  "complete": false, 
+  "test-path": "explosive-bakery/test-data/08-10-17/hi", 
+  "datafile": "explosive-bakery/test-data/08-10-17/hi/test-data.json", 
+  "test-name": "hi", 
+  "serial_port": "/dev/tty.wchusbserial1410", 
+  "baud_rate": 115200, 
+  "rocket_length": 0.0, 
+  "rocket_diameter": 0.0, 
+  "rocket_material": "PVC", 
+  "rocket_fuel_mass": 0.0, 
+  "rocket_mass": 0.0, 
+  "fuel_type": "Corn Syrup", 
+  "nozzle_used": true, 
+  "comments": "", 
+  "data": {}
+}
