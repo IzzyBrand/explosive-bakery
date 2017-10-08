@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+###############
+## Collects rocket parameters
+##############
+## requires pySerial to be installed 
+# from helpers import init_test
+import argparse
+import sys
+import os
+from helpers import logging, json_sort
+import json
+from thrusttest import ThrustTest
+
+SCRIPT_PATH   = os.path.realpath(__file__)
+SCRIPT_FOLDER = os.path.dirname(SCRIPT_PATH)
+BAKERY_FOLDER = os.path.dirname(SCRIPT_FOLDER)
+DATA_FOLDER   = os.path.join(BAKERY_FOLDER, 'test-data')
+
+ap = argparse.ArgumentParser()
+group = ap.add_mutually_exclusive_group(required=True)
+group.add_argument("-n", "--name", help='Launch name')
+group.add_argument("-j", "--json-file", type=argparse.FileType('rw+'),
+    help="Specify JSON data file to use")
+
+try:
+    args = vars(ap.parse_args())
+except IOError:
+    logging.error('JSON file not found...')
+    sys.exit(0)
+
+if args['name'] is not None:
+    test = ThrustTest(name=args['name'], set_opts=True)
+else:
+    test = ThrustTest(JSON=args['json_file'], set_opts=True)
+    json_path = os.path.join(os.path.dirname(BAKERY_FOLDER),
+                             test.options['datafile'])
+    json.dump(json_sort(test.options),
+              open(json_path, 'w'), indent=2)
+
+    logging.debug('JSON at %s updated.' % json_path)
+

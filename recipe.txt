@@ -12,6 +12,11 @@ Corn Syrup, Sugar, Potassium Nitrate
     57.6 g corn syrup
     208  g potassium nitrate
 
+500g batch
+    .65 * 500 = 325 g potassium nitrate
+    .18 * 500 = 90  g corn syrup
+    .17 * 500 = 85  g sugar
+
 Sugar, Potassium Nitrate, Water
     For 100 g fuel:
         65 g potassium nitrate

@@ -1,6 +1,17 @@
 import serial
 import sys
+import os
+import json
+from datetime import datetime
 import coloredlogs, logging
+
+FORMAT = "[%(asctime)4s] %(message)s"
+coloredlogs.install(fmt=FORMAT, level='DEBUG')
+
+SCRIPT_PATH   = os.path.realpath(__file__)
+SCRIPT_FOLDER = os.path.dirname(SCRIPT_PATH)
+BAKERY_FOLDER = os.path.dirname(SCRIPT_FOLDER)
+DATA_FOLDER   = os.path.join(BAKERY_FOLDER, 'test-data')
 
 defaults = {
     'serial_port': '/dev/tty.wchusbserial1410',
@@ -15,19 +26,20 @@ defaults = {
     'comments': '',
     'data': {},
     'date': '',
-    'filename': ''
+    'datafile': 'test-data.json',
+    'test-path': '',
+    'test-name': '',
+    'complete': False
 }
 
-FORMAT = "[%(asctime)4s] %(message)s"
-coloredlogs.install(fmt=FORMAT, level='DEBUG')
-
-def json_sort(opts):
+def json_sort(options):
     from collections import OrderedDict as OD
-    skeys = ['date', 'serial_port', 'baud_rate', 'rocket_length', 'rocket_diameter',
+    skeys = ['date', 'complete', 'test-path', 'datafile', 'test-name',
+             'serial_port', 'baud_rate', 'rocket_length', 'rocket_diameter',
              'rocket_material', 'rocket_fuel_mass', 'rocket_mass', 'fuel_type',
-             'nozzle_used', 'left_endpoint', 'right_endpoint', 'filename',
-             'comments', 'data']
-    return OD(sorted(opts.iteritems(), key=lambda x: skeys.index(x[0])))
+             'nozzle_used', 'left_endpoint', 'right_endpoint', 'comments',
+             'data']
+    return OD(sorted(options.iteritems(), key=lambda x: skeys.index(x[0])))
 
 def str_prompt(string):
     try:
@@ -49,19 +61,19 @@ def numb_prompt(prompt, value):
         except ValueError:
             logging.error('%s must be a number...' % value)
 
-def get_parameter(opts):
+def get_parameter(options):
     print '\nEnter parameters (ctrl-c to exit)'
     print '0. Continue'
-    print '1. Serial Port [%s]' % opts['serial_port']
-    print '2. Baud Rate [%s]' % opts['baud_rate']
-    print '3. Rocket length [%s]' % opts['rocket_length']
-    print '4. Rocket inner diameter [%s]' % opts['rocket_diameter']
-    print '5. Rocket mass with fuel [%s]' % opts['rocket_fuel_mass']
-    print '6. Rocket mass without fuel [%s]' % opts['rocket_mass']
-    print '7. Rocket material [%s]' % opts['rocket_material']
-    print '8. Fuel type [%s]' % opts['fuel_type']
-    print '9. Nozzle [%s]' % opts['nozzle_used']
-    print '10. Comments [%s]' % opts['comments']
+    print '1. Serial Port [%s]' % options['serial_port']
+    print '2. Baud Rate [%s]' % options['baud_rate']
+    print '3. Rocket length [%s]' % options['rocket_length']
+    print '4. Rocket inner diameter [%s]' % options['rocket_diameter']
+    print '5. Rocket mass with fuel [%s]' % options['rocket_fuel_mass']
+    print '6. Rocket mass without fuel [%s]' % options['rocket_mass']
+    print '7. Rocket material [%s]' % options['rocket_material']
+    print '8. Fuel type [%s]' % options['fuel_type']
+    print '9. Nozzle [%s]' % options['nozzle_used']
+    print '10. Comments [%s]' % options['comments']
 
     while 1:
         try:
@@ -77,19 +89,22 @@ def get_parameter(opts):
         except ValueError:
             logging.error('Invalid input')
 
-def get_opt_dict(options=defaults):
+def get_opt_dict(options=defaults, check_ser=False):
     while True:
         opt = get_parameter(options)
         if opt == 0:
             break
         elif opt == 1:
-            while True:
-                options['serial_port'] = str_prompt('Serial port: ')
-                try:
-                    serial.Serial(options['serial_port'])
-                    break
-                except serial.SerialException:
-                    logging.error('Serial port not detected.')
+            if check_ser:
+                while True:
+                    options['serial_port'] = str_prompt('Serial port: ')
+                    try:
+                        serial.Serial(options['serial_port'])
+                        break
+                    except serial.SerialException:
+                        logging.error('Serial port not detected.')
+            else:
+                options['serial_port'] = str_prompt('Serial Port: ')
         elif opt == 2:
             options['baud_rate'] = numb_prompt('Baud Rate: ', 'Baud rate')
         elif opt == 3:
@@ -138,7 +153,76 @@ def get_opt_dict(options=defaults):
 
     return options
 
-
 def get_defaults():
     return defaults
+
+def remove_home(string):
+    return string.replace(string[0:string.index('explosive-bakery/')], '')
+
+def init_test(name, set_opts):
+    # if args['json_file'] is not None:
+    #     f = args['json_file']
+    #     options = get_opt_dict(json.load(args['json_file']), check_ser=check_ser)
+    #     args['json_file'].close()
+    #     f = open(args['json_file'].name, 'w')
+    if set_opts:
+        options = get_opt_dict(get_defaults())
+    else:
+        options = get_defaults()
+    while True:
+        try:
+            inp = raw_input('Launch date [dd-mm-yy] (blank for today): ')
+            if not inp:
+                date = datetime.now()
+            else:
+                date = datetime.strptime(inp, '%d-%m-%y')
+            break
+        except KeyboardInterrupt:
+            print ''
+            logging.warning('Exiting...')
+            sys.exit(0)
+        except ValueError:
+            logging.warning('Invalid format...')
+            continue
+
+    date_folder = date.strftime('%d-%m-%y')
+    date_path   = os.path.join(DATA_FOLDER, date_folder)
+    test_path = os.path.join(date_path, name)
+    datafile_path = os.path.join(test_path, options['datafile'])
+
+    if os.path.exists(test_path):
+        logging.warning('Test path already exists.')
+        try:
+            prompt = 'Continue anyway? (will use existing JSON) [y/n]: '
+            resp = raw_input(prompt)
+            if resp.lower() != 'y':
+                print ''
+                logging.warning('Exiting...')
+                sys.exit(0)
+            else:
+                new_json = False
+        except KeyboardInterrupt:
+            print ''
+            logging.warning('Exiting...')
+            sys.exit(0)
+    else:
+        new_json = True
+
+    os.mkdir(date_path) if not os.path.exists(date_path) else None
+    os.mkdir(test_path) if not os.path.exists(test_path) else None
+
+    options['test-path'] = remove_home(test_path)
+    options['date'] = date_folder
+    options['datafile'] = remove_home(datafile_path)
+    options['test-name'] = name
+
+    f = open(datafile_path, 'w')
+
+    json.dump(json_sort(options), f, indent=2)
+    f.close()
+    if new_json:
+        logging.debug('JSON written to %s.' % options['datafile'])
+    else:
+        logging.debug('JSON at %s updated.' % options['datafile'])
+    return options
 
