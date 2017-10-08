@@ -11,7 +11,7 @@ coloredlogs.install(fmt=FORMAT, level='DEBUG')
 SCRIPT_PATH   = os.path.realpath(__file__)
 SCRIPT_FOLDER = os.path.dirname(SCRIPT_PATH)
 BAKERY_FOLDER = os.path.dirname(SCRIPT_FOLDER)
-DATA_FOLDER   = os.path.join(BAKERY_FOLDER, 'test-data')
+DATA_FOLDER   = os.path.join(BAKERY_FOLDER, 'thrust-tests')
 
 defaults = {
     'serial_port': '/dev/tty.wchusbserial1410',
