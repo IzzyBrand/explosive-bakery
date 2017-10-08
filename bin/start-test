@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+
+from thrusttest import ThrustTest
+import argparse
+import os
+import sys
+import json
+from helpers import logging
+
+TEST_MODE = False
+
+SCRIPT_PATH   = os.path.realpath(__file__)
+SCRIPT_FOLDER = os.path.dirname(SCRIPT_PATH)
+BAKERY_FOLDER = os.path.dirname(SCRIPT_FOLDER)
+DATA_FOLDER   = os.path.join(BAKERY_FOLDER, 'test-data')
+
+ap = argparse.ArgumentParser()
+
+group = ap.add_mutually_exclusive_group(required=True)
+group.add_argument('-j', '--json-file', type=str,
+                   help='Use pre-existing JSON file')
+group.add_argument("-n", "--name", help='The name by which to save this test')
+
+ap.add_argument("-c", "--cli", action='store_true', default=False,
+    help='Set options with the command line interface')
+
+try:
+    args = vars(ap.parse_args())
+except IOError:
+    logging.error('JSON file not found...')
+    sys.exit(0)
+
+if args['json_file'] is None:
+    test = ThrustTest(name=args['name'], set_opts=args['cli'])
+    test.run_test(test=TEST_MODE)
+else:
+    test = ThrustTest(JSON=args['json_file'], set_opts=args['cli'])
+    test.run_test(test=TEST_MODE)
+
+try:
+    if raw_input('Analyze now? [y/n]: ').lower() == 'y':
+        test.analyze()
+except KeyboardInterrupt:
+    pass
+
+
