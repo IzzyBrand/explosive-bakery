@@ -53,7 +53,7 @@ class Logger:
             if idx == (n-1):
                 log_str += "\n"
             else:
-                log_str += delimeter
+                log_str += delimeter + "\t"
 
         # Write to file and flush (if specified)
         self.file.write(log_str)
