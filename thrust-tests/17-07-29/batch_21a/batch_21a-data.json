@@ -1,0 +1,15 @@
+{
+  "date": "", 
+  "serial_port": "/dev/tty.wchusbserial1410", 
+  "baud_rate": 115200, 
+  "rocket_length": 7.0, 
+  "rocket_diameter": 1.0, 
+  "rocket_material": "PVC", 
+  "rocket_fuel_mass": 0.0, 
+  "rocket_mass": 0.0, 
+  "fuel_type": "Corn Syrup", 
+  "nozzle_used": true, 
+  "filename": "batch_21a-data.json", 
+  "comments": "wider core\nnondivergent nozzle", 
+  "data": {}
+}
