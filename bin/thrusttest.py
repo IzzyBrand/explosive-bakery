@@ -12,7 +12,7 @@ import time
 SCRIPT_PATH   = os.path.realpath(__file__)
 SCRIPT_FOLDER = os.path.dirname(SCRIPT_PATH)
 BAKERY_FOLDER = os.path.dirname(SCRIPT_FOLDER)
-DATA_FOLDER   = os.path.join(BAKERY_FOLDER, 'test-data')
+DATA_FOLDER   = os.path.join(BAKERY_FOLDER, 'thrust-tests')
 
 logging = helpers.logging
 
