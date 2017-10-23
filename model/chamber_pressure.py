@@ -23,7 +23,7 @@ numerator   = 1 + ((k - 1) / 2 * M**2)
 denominator = (1 + (k - 1) / 2)
 exp         = -1 * ((k + 1) / (2 * (k - 1)))
 exponent    = (k + 1) / (2 * (k - 1))
-A_star      = M * nozzle_area * (numerator / denominator) ** exp
+A_star      = nozzle_area #M * nozzle_area * (numerator / denominator) ** exp
 
 R = R_effective
 flag1 = False
@@ -63,6 +63,7 @@ print 'Done.'
 
 pressures = np.array(pressures)
 plt.plot(times, 0.000145038 * pressures, label='Pressure')
+
 # plt.plot(times, burn_rates,    label='BR')
 plt.xlabel('Time (seconds)')
 plt.ylabel('Pressure (psi)')
