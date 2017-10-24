@@ -27,6 +27,7 @@ class Pin:
         GPIO.output(self.pin, LOW)
 
     def _init_pin(self):
+        GPIO.setwarnings(False)  # Turn off GPIO library warnings
         GPIO.setmode(GPIO.BCM) # Broadcom pin-numbering scheme
         GPIO.setup(self.pin, self.direction)
         GPIO.output(self.pin, self.state)
