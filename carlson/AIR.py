@@ -134,6 +134,8 @@ if __name__ == "__main__":
                     data["compass"][0],    data["compass"][1],    data["compass"][2],
                     data["accel"][0],      data["accel"][1],      data["accel"][2],
                     data["gyro"][0],       data["gyro"][1],       data["gyro"][2]])
+            else:
+                logger.write([time.time()-t0, "IMU_NOT_READY"])
 
         # Set chute pin back to LOW if blast cap burn time is reached
         if _chute_deployed and (time.time() - time_chute_deployed > BLAST_CAP_BURN_TIME):

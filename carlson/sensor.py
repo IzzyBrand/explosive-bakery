@@ -18,6 +18,8 @@ class Sensor:
     def read_imu(self):
         if self.imu.IMURead():
             return self.imu.getIMUData()
+        else:
+            return None
 
     def read_barometer_temperature_pressure(self):
         return self.barometer.read_temperature_pressure()
