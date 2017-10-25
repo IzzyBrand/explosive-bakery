@@ -5,10 +5,10 @@
 import serial
 import time
 
-PORT                = "/dev/ttyUSB0"
-BAUD                = 57600
-SERIAL_TIMEOUT      = 0
-TIME_BEFORE_RESEND  = 0.5  # (s) how long to wait before panicking (send again)
+PORT               = "/dev/ttyUSB0"
+BAUD               = 57600
+SERIAL_TIMEOUT     = 0
+TIME_BEFORE_RESEND = 0.5  # (s) how long to wait before panicking (send again)
 
 class Telemetry:
 
@@ -26,9 +26,7 @@ class Telemetry:
     def _initialize_telemetry(self, port=PORT, baud=BAUD, timeout=SERIAL_TIMEOUT):
         while True:
             try:
-                self.radio = serial.Serial(port=port,
-                                      baudrate=baud,
-                                      timeout=timeout)
+                self.radio = serial.Serial(port=port, baudrate=baud, timeout=timeout)
                 print "Initialized telemetry radio."
                 return True
             except serial.serialutil.SerialException:

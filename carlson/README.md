@@ -1,8 +1,8 @@
-# Carlson v0.3 #
+# Carlson v0.3
 
 Carlson is a Raspberry Pi Zero based rocket flight computer with an MPU9255 IMU, BMP280 barometer, 1080p video camera, WiFi chip, and 915 MHz telemetry radio. It runs on a two-cell lithium polymer battery. Carlson will eventually control automatic apogee detection in flight and parachute deployment.
 
-## Installation ##
+## Installation 
 
 **GROUND**
 
@@ -14,11 +14,11 @@ Follow directions under *Additional Repositories* below to compile and install s
 
     $ pip install -r requirements/air.txt
 
-## AIR station ##
+## AIR station 
 
 Python state machine running on the Raspberry Pi in the rocket that starts and stops data / video logging and can detonate the parachute ejection blast cap in flight. This script sends periodic updates to the GROUND station via telemetry at 1 Hz and listens for incoming state transition commands from GROUND. 
 
-## GROUND station ##
+## GROUND station 
 
 Python ground server script. This is a lite version of what will eventually run on the base station, controlled by the web server (a user will interact with the system through a front-end web-page server by the web server, allowing increased distance from the launch site for increased safety). The ground script serves up an input terminal where user can manually input commands. Data received from the AIR station is printed in the terminal as soon as it arrives.
 
@@ -26,17 +26,17 @@ Python ground server script. This is a lite version of what will eventually run 
 
 Coming soon. For now, just check out the GROUND.py source code.
 
-## Additional Repositories ##
+## Additional Repositories 
 
 These repositories have been forked so that we can modify them as required. They both require compilation and installation before they can be used.
 
-### Accel/Gyro/Magnet ###
+### Accel/Gyro/Magnet 
 
 https://github.com/benshanahan1/RTIMULib2
 
 For compilation on Linux systems, see https://github.com/benshanahan1/RTIMULib2/tree/master/Linux.
 
-### Barometer ###
+### Barometer 
 
 https://github.com/benshanahan1/BMP280
 
@@ -45,13 +45,13 @@ This is just a C++ python library that needs to be compiled. Run:
 	$ sudo python setup.py build
 	$ sudo python setup.py install
 
-## Telemetry Link ##
+## Telemetry Link 
 
 We are using a pair of 915 MHz 3DR telemetry radios to communicate between AIR and GROUND. This radio link enables two-way communication between the AIR and GROUND stations.
 
-## Carlson Launch Checklists ##
+## Carlson Launch Checklists 
 
-#### @ Home Base ####
+#### @ Home Base 
 
 - Charge batteries (2-cell LiPo's are full at 4.2 V*2 cells = 8.4 V)
 - Power flight computer on, run full test of GROUND and AIR station code (verify state changes, camera, logging, etc.); check connection wires are intact
@@ -64,7 +64,7 @@ We are using a pair of 915 MHz 3DR telemetry radios to communicate between AIR a
 - Set up helper Pi as wireless access point and configure Carlson to connect to this network as a client automatically
 - Pack the nichrome wire, Pi configured as access point, USB micro cable, blast cap, wadding, parachute, string, and ejection fuel!
 
-#### @ Launch Site ####
+#### @ Launch Site 
 
 - Power on helper Pi hosting wireless access point
 - Connect to helper Pi's access point with laptop
@@ -73,7 +73,7 @@ We are using a pair of 915 MHz 3DR telemetry radios to communicate between AIR a
 - Restart AIR python script on Carlson and start logger (IMU data and video capture)
 - Blast off
 
-## To Do ##
+## To Do 
 
 1. Calibrate IMU before next flight (check orientation flags for mounting in rocket)
 2. Update requirements/air.txt
