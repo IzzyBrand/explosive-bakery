@@ -8,8 +8,8 @@ for line in f.read().split('\n')[0:-1]:
 	data.append(map(float, line.split(',\t')))
 
 bdata = np.array(data)
-start = 1500
-end = 5000
+start = 0
+end = len(data)
 times = bdata[start:end,0]
 
 plt.scatter(times, bdata[start:end, 1], label='state', s=6, c='purple', lw=0)   # state

@@ -99,7 +99,7 @@ if __name__ == "__main__":
             else:
                 if _logging_on:
                     # Stop data and camera and safely close file on disk.
-                    logger.stop_all()
+                    logger.stop()
                     _logging_on = False
                     print "Stopped logging"
 
