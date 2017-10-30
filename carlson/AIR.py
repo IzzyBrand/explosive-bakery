@@ -8,14 +8,17 @@ import time
 import serial
 import os
 
+import logger as lgr
 from state import State
 from telemetry import Telemetry
-from logger import Logger
 from sensor import Sensor
 from gpio import Pin
 
 HEARTBEAT_DELAY = 1  # seconds, how often do we send state to ground station
 BLAST_CAP_BURN_TIME = 5  # seconds, how long to keep relay shorted for
+
+# Should we debug?
+DEBUG_MODE = True
 
 if __name__ == "__main__":
 
@@ -42,17 +45,23 @@ if __name__ == "__main__":
     ## Initialize our external devices
     ###########################################################################
 
+    # Define logger but don't initialize a new log file here
+    logger = lgr.Logger(init_logfile=False, init_camera=True)
+
+    def debug(text):
+        if DEBUG_MODE: logger.write(text, lgr.DEBUG)
+
     # Initialize telemetry radio for communication with ground station
     radio = Telemetry()
+    debug("Initialized telemetry.")
 
     # Initialize the IMU and barometer sensors so that we can read from them
     sensor = Sensor()
+    debug("Initialized IMU.")
 
     # Initialize the GPIO pins so that we can write them high or low
     chute_pin = Pin(4)
-
-    # Define logger but don't initialize a new log file here
-    logger = Logger(init_logfile=False, init_camera=True)
+    debug("Initialized chute pin.")
 
     # Main loop
     t0 = 0
@@ -63,6 +72,7 @@ if __name__ == "__main__":
         #######################################################################
 
         new_state = radio.read();
+        debug("=== RADIO READ ===")
         
         # If we got a state command via telemetry, parse it and set latches
         if new_state != "":
