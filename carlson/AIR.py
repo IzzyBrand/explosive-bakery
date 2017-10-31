@@ -46,8 +46,9 @@ if __name__ == "__main__":
     ###########################################################################
 
     # Define logger but don't initialize a new log file here
-    logger = lgr.Logger(init_logfile=False, init_camera=True)
+    logger = lgr.Logger(init_log=False, init_camera=True, init_debug=True)
 
+    # Define debug function
     def debug(text):
         if DEBUG_MODE: logger.write(text, lgr.DEBUG)
 
@@ -57,7 +58,7 @@ if __name__ == "__main__":
 
     # Initialize the IMU and barometer sensors so that we can read from them
     sensor = Sensor()
-    debug("Initialized IMU.")
+    debug("Initialized sensor.")
 
     # Initialize the GPIO pins so that we can write them high or low
     chute_pin = Pin(4)
@@ -65,6 +66,7 @@ if __name__ == "__main__":
 
     # Main loop
     t0 = 0
+    debug("Entering program loop.")
     while (True):
 
         #######################################################################
@@ -72,12 +74,11 @@ if __name__ == "__main__":
         #######################################################################
 
         new_state = radio.read();
-        debug("=== RADIO READ ===")
         
         # If we got a state command via telemetry, parse it and set latches
         if new_state != "":
-
             new_state = ord(new_state)  # convert from char to int
+            debug("New state read (%d)." % new_state)
 
             # Get bit flags from new state
             arm       = state.get_bit(state.ARM_BIT, byte=new_state)
@@ -89,10 +90,12 @@ if __name__ == "__main__":
             if arm:
                 if not _armed:
                     _armed = True
+                    debug("Armed")
                     print "Armed"
             else:
                 if _armed:
                     _armed = False
+                    debug("Disarmed")
                     print "Disarmed"
 
             ### Data logging (sensor data and video) ###
@@ -101,16 +104,18 @@ if __name__ == "__main__":
                     # Initialize logger, which will create a new log file and
                     # set up the camera so we're ready to record. Start the
                     # camera too.
-                    logger._init_new_logfile()
+                    logger._init_new_log()
                     logger.start_video()
                     t0 = time.time()  # reset reference time
                     _logging_on = True
+                    debug("Started logging")
                     print "Started logging"
             else:
                 if _logging_on:
                     # Stop data and camera and safely close file on disk.
-                    logger.stop()
+                    logger.stop()  # stop only LOG, not DEBUG
                     _logging_on = False
+                    debug("Stopped logging")
                     print "Stopped logging"
 
             ### Deploy chute ###
@@ -119,13 +124,16 @@ if __name__ == "__main__":
                     chute_pin.set_high()
                     _chute_deployed = True
                     time_chute_deployed = time.time()
+                    debug("Chute pin HIGH")
                     print "Set chute pin to HIGH"
 
             ### Power off ###
             if power_off:
                 if not _armed and not _logging_on:
                     print "Powering off"
-                    time.sleep(3)  # give everything a chance to die
+                    time.sleep(1)  # give everything a chance to die
+                    debug("Power off")
+                    logger.stop(target=DEBUG)  # flush and close debug file
                     os.system("sudo poweroff")
 
         #######################################################################
@@ -139,7 +147,9 @@ if __name__ == "__main__":
             # Read from IMU
             data = sensor.read_imu()
             if data is not None:
-                logger.write([time.time()-t0, state.state,
+                t = time.time() - t0
+                debug("[%s] Data read" % t)
+                logger.write([t, state.state,
                     data["fusionPose"][0], data["fusionPose"][1], data["fusionPose"][2],
                     data["compass"][0],    data["compass"][1],    data["compass"][2],
                     data["accel"][0],      data["accel"][1],      data["accel"][2],
@@ -151,6 +161,7 @@ if __name__ == "__main__":
         if _chute_deployed and (time.time() - time_chute_deployed > BLAST_CAP_BURN_TIME):
             chute_pin.set_low()
             _chute_deployed = False
+            debug("Chute pin LOW")
             print "Set chute pin to LOW"
 
         #######################################################################
@@ -165,3 +176,4 @@ if __name__ == "__main__":
             if _chute_deployed: state.add(state.CHUTE)
             radio.write(chr(state.state))
             state_last_sent = time.time()
+            debug("Sent heartbeat")

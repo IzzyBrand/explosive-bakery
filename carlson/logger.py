@@ -21,6 +21,7 @@ VIDEO_EXT = "h264"
 # Define constants for Logger write targets.
 LOG   = 0
 DEBUG = 1
+ALL   = 2
 
 # Video-specific parameters
 CAPTURE_RES = (1920, 1080)  # in pixels
@@ -82,14 +83,14 @@ class Logger:
 
     # Stop logger. This consists of log file, debug file, and video capture, if
     # they are enabled.
-    def stop(self):
-        if self.log_enabled:
+    def stop(self, target=LOG):
+        if (target == ALL or target == LOG) and self.log_enabled:
             self.log.flush()
             self.log.close()
-        if self.debug_enabled:
+        if (target == ALL or target == DEBUG) and self.debug_enabled:
             self.debug.flush()
             self.debug.close()
-        if self.camera_enabled:
+        if (target == ALL or target == LOG) and self.camera_enabled:
             self.stop_video()
 
     # Open file descriptor to new log file
