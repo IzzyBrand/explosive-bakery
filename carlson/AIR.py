@@ -176,4 +176,4 @@ if __name__ == "__main__":
             if _chute_deployed: state.add(state.CHUTE)
             radio.write(chr(state.state))
             state_last_sent = time.time()
-            debug("Sent heartbeat")
+            debug("Sent heartbeat (%d)" % state.state)
