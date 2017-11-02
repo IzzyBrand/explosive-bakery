@@ -1,21 +1,29 @@
-# WirelessCommunicator
-#
 # Send data across a wireless network via UDP.
 #
 # 2 November 2017, Benjamin Shanahan.
 
 import socket
+import netifaces as ni
 
 class WirelessCommunicator:
 
-    def __init__(self, host_ip="127.0.0.1", host_port=5000, target_ip="127.0.0.1", target_port=5001):
+    ###########################################################################
+    ## Initializer
+    ###########################################################################
+
+    def __init__(self, host_ip="127.0.0.1", host_port=5000, target_ip="127.0.0.1", target_port=5001, detect_netiface="wlan0"):
+        # Should we auto-detect the network interface IP as host?
+        # Do this by default unless `detect_netiface` is set to None.
+        if detect_netiface is not None:
+            host_ip = ni.ifaddresses(detect_netiface)[ni.AF_INET][0]['addr']
+
         self._set_host(host_ip, host_port)
         self._set_target(target_ip, target_port)
 
         # Open a UDP socket and bind a port
         self._open_socket()
         self._bind_port()
-        print "Opened socket and bound to %s, port %d." % (this_port, this_ip)
+        print "Opened socket and bound to %s, port %d." % (host_ip, host_port)
     
     ###########################################################################
     ## Manage Sockets and Ports

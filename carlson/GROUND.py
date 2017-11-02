@@ -12,69 +12,71 @@ import threading
 import Queue
 import argparse
 
-state = State()
+if __name__ == "__main__":
 
-###############################################################################
-## Functions
-###############################################################################
+    state = State()
 
-# Asynchronously add any screen input to a queue
-def add_input(input_queue):
-    while True:
-        input_queue.put(sys.stdin.read(1))
+    ###########################################################################
+    ## Functions
+    ###########################################################################
 
-# Write command to telemetry radio
-def broadcast(cmd=None):
-    if cmd is not None:
-        radio.write(chr(cmd))
+    # Asynchronously add any screen input to a queue
+    def add_input(input_queue):
+        while True:
+            input_queue.put(sys.stdin.read(1))
 
-###############################################################################
-## Input Buffer
-###############################################################################
+    # Write command to telemetry radio
+    def broadcast(cmd=None):
+        if cmd is not None:
+            radio.write(chr(cmd))
 
-# Set up argument parser to specify different port for radio via terminal
-parser = argparse.ArgumentParser(description="Ground station for the Carlson rocket flight computer.")
-parser.add_argument("-p", "--port", default=PORT, help="Serial port of the telemetry radio.")
-args = parser.parse_args()
+    ###########################################################################
+    ## Input Buffer
+    ###########################################################################
 
-# Initialize Telemetry radio with port from ArgumentParser
-radio = Telemetry(args.port)
+    # Set up argument parser to specify different port for radio via terminal
+    parser = argparse.ArgumentParser(description="Ground station for the Carlson rocket flight computer.")
+    parser.add_argument("-p", "--port", default=PORT, help="Serial port of the telemetry radio.")
+    args = parser.parse_args()
 
-# Add Queue and launch a thread to monitor user input.
-input_queue = Queue.Queue()
-input_thread = threading.Thread(target=add_input, args=(input_queue,))
-input_thread.daemon = True
-input_thread.start()
+    # Initialize Telemetry radio with port from ArgumentParser
+    radio = Telemetry(args.port)
 
-# Respond to user input, non-blocking.
-while (True):
+    # Add Queue and launch a thread to monitor user input.
+    input_queue = Queue.Queue()
+    input_thread = threading.Thread(target=add_input, args=(input_queue,))
+    input_thread.daemon = True
+    input_thread.start()
 
-    if not input_queue.empty():
-        arg = input_queue.get().lower().strip()
-        if arg != "":
-            # Arm
-            if arg == "a":
-                print "arm"
-                broadcast(state.ARM)
-            # Disarm
-            if arg == "d":
-                print "disarm"
-                broadcast(state.IDLE)
-            # Start logger (i.e. ready for launch)
-            if arg == "l":
-                print "start logging"
-                broadcast(state.ARM + state.LOGGING)
-            # Deploy chute
-            if arg == "c":
-                print "deploy chute"
-                broadcast(state.ARM + state.LOGGING + state.CHUTE)
-            # Shutdown Carlson
-            if arg == "k":
-                print "power off"
-                broadcast(state.POWER_OFF)
+    # Respond to user input, non-blocking.
+    while (True):
 
-    # Read (non-blocking) from telemetry radio
-    received = radio.read()
-    if received != "":
-        state.set(ord(received))
-        print "Air State: %s" % state
+        if not input_queue.empty():
+            arg = input_queue.get().lower().strip()
+            if arg != "":
+                # Arm
+                if arg == "a":
+                    print "arm"
+                    broadcast(state.ARM)
+                # Disarm
+                if arg == "d":
+                    print "disarm"
+                    broadcast(state.IDLE)
+                # Start logger (i.e. ready for launch)
+                if arg == "l":
+                    print "start logging"
+                    broadcast(state.ARM + state.LOGGING)
+                # Deploy chute
+                if arg == "c":
+                    print "deploy chute"
+                    broadcast(state.ARM + state.LOGGING + state.CHUTE)
+                # Shutdown Carlson
+                if arg == "k":
+                    print "power off"
+                    broadcast(state.POWER_OFF)
+
+        # Read (non-blocking) from telemetry radio
+        received = radio.read()
+        if received != "":
+            state.set(ord(received))
+            print "Air State: %s" % state

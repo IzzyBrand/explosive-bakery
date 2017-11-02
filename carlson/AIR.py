@@ -9,6 +9,7 @@ import serial
 import os
 
 import logger as lgr
+import wirelesscommunicator as wc
 from state import State
 from telemetry import Telemetry
 from sensor import Sensor
@@ -18,7 +19,9 @@ HEARTBEAT_DELAY = 1  # seconds, how often do we send state to ground station
 BLAST_CAP_BURN_TIME = 5  # seconds, how long to keep relay shorted for
 
 # Should we debug?
-DEBUG_MODE = True
+LOG_DEBUG = True  # Save debug info to a local text file
+# TODO: **important** THIS OPTION (UDP_DEBUG) SHOULD BE FALSE UNLESS MANUALLY SPECIFIED BY A FLAG (ARGPARSER)
+UDP_DEBUG = True  # Send info across network to another machine on the network
 
 if __name__ == "__main__":
 
@@ -42,6 +45,18 @@ if __name__ == "__main__":
     time_chute_deployed = 0
 
     ###########################################################################
+    ## Initialize Wireless Communication
+    ###########################################################################
+
+    # TODO: allow IPs and ports to be specified via argparser
+    if UDP_DEBUG:
+        host_port   = 5000             # Port that laptop will send to on Carlson
+        target_ip   = "192.168.1.228"  # IP of laptop running WIFIDEBUGGER
+        target_port = 5001             # Port on laptop running WIFIDEBUGGER
+        wifidebugger = wc.WirelessCommunicator(
+            host_port=host_port, target_ip=target_ip, target_port=target_port)
+
+    ###########################################################################
     ## Initialize our external devices
     ###########################################################################
 
@@ -50,7 +65,7 @@ if __name__ == "__main__":
 
     # Define debug function
     def debug(text):
-        if DEBUG_MODE: logger.write(text, lgr.DEBUG)
+        if LOG_DEBUG: logger.write(text, lgr.DEBUG)
 
     # Initialize telemetry radio for communication with ground station
     radio = Telemetry()
@@ -149,11 +164,15 @@ if __name__ == "__main__":
             if data is not None:
                 t = time.time() - t0
                 debug("[%s] Data read" % t)
-                logger.write([t, state.state,
+                data_vector = [t, state.state,
                     data["fusionPose"][0], data["fusionPose"][1], data["fusionPose"][2],
                     data["compass"][0],    data["compass"][1],    data["compass"][2],
                     data["accel"][0],      data["accel"][1],      data["accel"][2],
-                    data["gyro"][0],       data["gyro"][1],       data["gyro"][2]])
+                    data["gyro"][0],       data["gyro"][1],       data["gyro"][2]]
+                logger.write(data_vector)
+                # If wifi debugging is enabled, send the data over UDP.
+                if UDP_DEBUG:
+                    wifidebugger.send(data_vector)
             #else:
             #    logger.write([time.time()-t0, "IMU_NOT_READY"])
 
