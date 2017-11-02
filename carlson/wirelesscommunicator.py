@@ -50,7 +50,11 @@ class WirelessCommunicator:
     ## Send and Receive Data
     ###########################################################################
 
-    def send(self, message):
+    # Data being sent (data_vector) should be a list.
+    def send(self, data_vector):
+        message = ""
+        for d in data_vector:
+            message = message + d + ","
         self.sock.sendto(message, (self.target_ip, self.target_port))
 
     def receive(self, _buffer_size=1024):

@@ -19,5 +19,7 @@ if __name__ == "__main__":
     # Spin and listen for incoming data packets
     print "Waiting for data..."
     while(True):
-        data_vector, address = wifidebugger.receive()
+        data_string, address = wifidebugger.receive()
+        data_vector = data_string.split(",")
+        
         print data_vector[0], data_vector[1], data_vector[2], data_vector[3]
