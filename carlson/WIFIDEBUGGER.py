@@ -38,34 +38,33 @@ if __name__ == "__main__":
         #######################################################################
         ## Parse data so we can do something with it
         #######################################################################
-        
+
         # Timestamp and current computer state
         t        = float(data_vector[0])
         state    = int(data_vector[1])
 
-        # NOTE: the X Y Z and not in that order because we offset the IMU axes,
-        #       so we need to figure out the order if it changesand adjust it
-        #       below.
+        # NOTE: Because of the way we calibrated the IMU, the cable needs to be
+        #       pointed DOWNWARDS, and X and Y axes are switched.
 
         # Fusion pose
-        fusionX  = rad2deg(float(data_vector[2]));
-        fusionY  = rad2deg(float(data_vector[4]));
-        fusionZ  = rad2deg(float(data_vector[3]));
+        fusionX  = rad2deg(float(data_vector[3]));
+        fusionY  = rad2deg(float(data_vector[2]));
+        fusionZ  = rad2deg(float(data_vector[4]));
 
         # Compass (magnetometer)
-        compassX = float(data_vector[5]);
-        compassY = float(data_vector[7]);
-        compassZ = float(data_vector[6]);
+        compassX = float(data_vector[6]);
+        compassY = float(data_vector[5]);
+        compassZ = float(data_vector[7]);
 
         # Accelerometer
-        accelX   = float(data_vector[8]);
-        accelY   = float(data_vector[10]);
-        accelZ   = float(data_vector[9]);
+        accelX   = float(data_vector[9]);
+        accelY   = float(data_vector[8]);
+        accelZ   = float(data_vector[10]);
 
         # Gyroscope
-        gyroX    = float(data_vector[11]);
-        gyroY    = float(data_vector[13]);
-        gyroZ    = float(data_vector[12]);
+        gyroX    = float(data_vector[12]);
+        gyroY    = float(data_vector[11]);
+        gyroZ    = float(data_vector[13]);
 
         #######################################################################
         ## Visualize Data
