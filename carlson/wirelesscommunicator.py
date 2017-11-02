@@ -54,7 +54,7 @@ class WirelessCommunicator:
     def send(self, data_vector):
         message = ""
         for d in data_vector:
-            message = message + d + ","
+            message = message + ("%s" % d) + ","  # convert to string and append
         self.sock.sendto(message, (self.target_ip, self.target_port))
 
     def receive(self, _buffer_size=1024):
