@@ -2,6 +2,7 @@
 #
 # 2 November 2017, Benjamin Shanahan.
 
+import array
 import socket
 import netifaces as ni
 
@@ -50,12 +51,12 @@ class WirelessCommunicator:
     ## Send and Receive Data
     ###########################################################################
 
-    # Data being sent (data_vector) should be a list.
+    # Data being sent (data_vector) should be a list. List is added to an array
+    # of floats, and then converted into a string of bytes. This is done to 
+    # reduce the size of the data being transmitted over the network.
     def send(self, data_vector):
-        message = ""
-        for d in data_vector:
-            message = message + ("%s" % d) + ","  # convert to string and append
-        self.sock.sendto(message, (self.target_ip, self.target_port))
+        byte_array = array.array("f", data_vector)
+        self.sock.sendto(byte_array.tostring(), (self.target_ip, self.target_port))
 
     def receive(self, _buffer_size=1024):
         data, addr = self.sock.recvfrom(_buffer_size)

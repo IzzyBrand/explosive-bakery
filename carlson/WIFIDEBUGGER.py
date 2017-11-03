@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 # Wireless debugger process that sits on a laptop on the same wireless network
 # as Carlson and listens to UDP packets containing data. It visualizes this
 # data.
@@ -11,6 +13,7 @@
 #
 # 2 November 2017, Benjamin Shanahan.
 
+import array
 import wirelesscommunicator as wc
 
 host_port   = 5001             # Port that Carlson will send to on this computer
@@ -32,8 +35,13 @@ if __name__ == "__main__":
     # Spin and listen for incoming data packets
     print "Waiting for data..."
     while(True):
+        # Receive data from UDP socket (blocking)
         data_string, address = wifidebugger.receive()
-        data_vector = data_string.split(",")
+        
+        # Parse incoming byte string of floats, convert it to a list object.
+        data_byte_array = array.array("f")
+        data_byte_array.fromstring(data_string)
+        data_vector = data_byte_array.tolist()
 
         #######################################################################
         ## Parse data so we can do something with it

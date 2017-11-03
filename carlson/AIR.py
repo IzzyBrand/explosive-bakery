@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
     # TODO: allow IPs and ports to be specified via argparser
     if UDP_DEBUG:
-        host_port   = 5000             # Port that laptop will send to on Carlson
+        host_port   = 5000             # Carlson's port (local)
         target_ip   = "192.168.1.228"  # IP of laptop running WIFIDEBUGGER
         target_port = 5001             # Port on laptop running WIFIDEBUGGER
         wifidebugger = wc.WirelessCommunicator(
@@ -158,6 +158,10 @@ if __name__ == "__main__":
         # If logging is on, write IMU data to logfile! We have yet to implement
         # sensor logging from the BMP280 because its read speed is slower than
         # from the IMU.
+        #
+        # We are currently logging 14 data points, which will be transmitted as
+        # 4-byte floats across the wireless network during UDP debugging. This
+        # is 4*14 = 56 bytes (plus header) per UDP packet.
         if _logging_on:
             # Read from IMU
             data = sensor.read_imu()
