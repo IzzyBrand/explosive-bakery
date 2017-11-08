@@ -17,7 +17,7 @@ import array
 import wirelesscommunicator as wc
 
 host_port   = 5001             # Port that Carlson will send to on this computer
-target_ip   = "192.168.1.226"  # Carlson's IP address
+target_ip   = "138.16.161.159"  # Carlson's IP address
 target_port = 5000             # Carlson's port
 
 def rad2deg(rad):
@@ -30,10 +30,13 @@ if __name__ == "__main__":
 
     # Initialize WiFi debugger
     wifidebugger = wc.WirelessCommunicator(
-        host_port=host_port, target_ip=target_ip, target_port=target_port)
+        host_port=host_port, target_ip=target_ip, target_port=target_port,
+        detect_netiface="wlp2s0")
 
     # Spin and listen for incoming data packets
     print "Waiting for data..."
+    time_last_read = 0;
+    max_delta      = 0;
     while(True):
         # Receive data from UDP socket (blocking)
         data_string, address = wifidebugger.receive()
@@ -50,6 +53,12 @@ if __name__ == "__main__":
         # Timestamp and current computer state
         t        = float(data_vector[0])
         state    = int(data_vector[1])
+        
+        # Compute sensor timing deltas
+        time_delta     = t - time_last_read
+        if time_last_read != 0 and time_delta > max_delta: 
+            max_delta = time_delta
+        time_last_read = t
 
         # NOTE: Because of the way we calibrated the IMU, the cable needs to be
         #       pointed DOWNWARDS, and X and Y axes are switched.
@@ -78,4 +87,5 @@ if __name__ == "__main__":
         ## Visualize Data
         #######################################################################
 
-        print "%.4f (%d): %.4f %.4f %.4f" % (t, state, fusionX, fusionY, fusionZ)
+        # print "%.4f [%.4f] (%d): %.4f %.4f %.4f" % (t, time_delta, state, fusionX, fusionY, fusionZ)
+        print "%.4f [%.4f] [max delta: %.4f]" % (t, time_delta, max_delta)
