@@ -61,7 +61,7 @@ if __name__ == "__main__":
     ###########################################################################
 
     # Define logger but don't initialize a new log file here
-    logger = lgr.Logger(init_log=False, init_camera=True, init_debug=True)
+    logger = lgr.Logger(init_log=False, init_camera=False, init_debug=True)
 
     # Define debug function
     def debug(text):
@@ -120,7 +120,7 @@ if __name__ == "__main__":
                     # set up the camera so we're ready to record. Start the
                     # camera too.
                     logger._init_new_log()
-                    logger.start_video()
+                    # logger.start_video()
                     t0 = time.time()  # reset reference time
                     _logging_on = True
                     debug("Started logging")

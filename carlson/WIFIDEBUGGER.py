@@ -17,7 +17,7 @@ import array
 import wirelesscommunicator as wc
 
 host_port   = 5001             # Port that Carlson will send to on this computer
-target_ip   = "192.168.1.226"  # Carlson's IP address
+target_ip   = "138.16.161.159"  # Carlson's IP address
 target_port = 5000             # Carlson's port
 
 def rad2deg(rad):
@@ -30,7 +30,8 @@ if __name__ == "__main__":
 
     # Initialize WiFi debugger
     wifidebugger = wc.WirelessCommunicator(
-        host_port=host_port, target_ip=target_ip, target_port=target_port)
+        host_port=host_port, target_ip=target_ip, target_port=target_port,
+        detect_netiface="wlp2s0")
 
     # Spin and listen for incoming data packets
     print "Waiting for data..."
