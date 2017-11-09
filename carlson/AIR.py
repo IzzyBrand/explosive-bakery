@@ -51,10 +51,15 @@ if __name__ == "__main__":
     # TODO: allow IPs and ports to be specified via argparser
     if UDP_DEBUG:
         host_port   = 5000             # Carlson's port (local)
-        target_ip   = "138.16.161.198"  # IP of laptop running WIFIDEBUGGER
+        target_ip   = "192.168.1.228"  # IP of laptop running WIFIDEBUGGER
         target_port = 5001             # Port on laptop running WIFIDEBUGGER
-        wifidebugger = wc.WirelessCommunicator(
-            host_port=host_port, target_ip=target_ip, target_port=target_port)
+        try:
+            wifidebugger = wc.WirelessCommunicator(
+                host_port=host_port, target_ip=target_ip, target_port=target_port)
+            UDP_DEBUG_SOCKET_INIT_OK = True
+        except:
+            print "Failed to bind port for WiFi debugging, skipping."
+            UDP_DEBUG_SOCKET_INIT_OK = False
 
     ###########################################################################
     ## Initialize our external devices
@@ -66,6 +71,12 @@ if __name__ == "__main__":
     # Define debug function
     def debug(text):
         if LOG_DEBUG: logger.write(text, lgr.DEBUG)
+
+    # TODO: reorganize this; add UDP WiFi debugger status to debug file
+    if UDP_DEBUG_SOCKET_INIT_OK:
+        debug("UDP debugger initialized OK")
+    else:
+        debug("UDP debugger failed to initialize")
 
     # Initialize telemetry radio for communication with ground station
     radio = Telemetry()
@@ -120,7 +131,7 @@ if __name__ == "__main__":
                     # set up the camera so we're ready to record. Start the
                     # camera too.
                     logger._init_new_log()
-                    # logger.start_video()
+                    logger.start_video()  # will only do something if camera's enabled
                     t0 = time.time()  # reset reference time
                     _logging_on = True
                     debug("Started logging")
@@ -175,8 +186,13 @@ if __name__ == "__main__":
                     data["gyro"][0],       data["gyro"][1],       data["gyro"][2]]
                 logger.write(data_vector)
                 # If wifi debugging is enabled, send the data over UDP.
-                if UDP_DEBUG:
-                    wifidebugger.send(data_vector)
+                if UDP_DEBUG and UDP_DEBUG_SOCKET_INIT_OK:
+                    # Try to send data over UDP, if it fails, just skip, we don't want
+                    # any other part of the code to stop.
+                    try:
+                        wifidebugger.send(data_vector)
+                    except:
+                        pass
             #else:
             #    logger.write([time.time()-t0, "IMU_NOT_READY"])
 
