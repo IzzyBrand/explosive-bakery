@@ -51,7 +51,7 @@ if __name__ == "__main__":
     # TODO: allow IPs and ports to be specified via argparser
     if UDP_DEBUG:
         host_port   = 5000             # Carlson's port (local)
-        target_ip   = "192.168.1.228"  # IP of laptop running WIFIDEBUGGER
+        target_ip   = "138.16.161.198"  # IP of laptop running WIFIDEBUGGER
         target_port = 5001             # Port on laptop running WIFIDEBUGGER
         wifidebugger = wc.WirelessCommunicator(
             host_port=host_port, target_ip=target_ip, target_port=target_port)
