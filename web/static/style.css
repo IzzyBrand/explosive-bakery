@@ -1,8 +1,21 @@
-button {
-    width: 80%;
-    height: 50vh;
-    margin: 0 auto;
-    background-color: red;
-    font-size: 6em;
-    color: white;
+html {
+    font-family: GillSans, Calibri, Trebuchet, sans-serif;
+    font-size: 17px;
+}
+
+h2 {
+    margin-top: 0;
+    padding: 0.25em;
+}
+
+.tabs .tab a {
+    color: black !important;
+}
+
+.nav-extended {
+    padding-left: 1em;
+}
+
+.card.white {
+    margin-top: 1em;
 }

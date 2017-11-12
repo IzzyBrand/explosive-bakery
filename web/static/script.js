@@ -1,16 +1,7 @@
+$(document).ready(function(){
+    $('ul.tabs').tabs();
+    $('ul.tabs').tabs('select_tab', 'test');
+});
 
-
-function goboom() {
-    console.log($.ajax('/boom'));
-}
-
-function getdata() {
-    $.ajax('/getdata', {complete: doit});
-    
-}
-
-function doit(resp) {
-    $('p').text(resp.responseText);
-}
-
-setInterval(getdata, 100);
+alert(launchReady);
+$('button').prop('disabled', true);

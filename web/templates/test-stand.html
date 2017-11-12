@@ -1,0 +1,38 @@
+ <div id='test-div'>
+  <table class'row'>
+    <tr>
+      <td class='col s6'>
+        <div id='new-test-form'>
+          <div class='input-field'>
+            <input type='text' id='new-test-name'>
+            <label for='new-test-name'>Batch Name</label>
+          </div>
+          <button href='/bogusstart' class='btn waves-light red lighten-1'>New Test</button>
+        </div></td>
+      <td class='col s6'>
+        <div id='test-actions'>
+          <button class='btn waves-light red lighten-1'>Calibrate</button>
+          <button class='btn waves-light red lighten-1'>Read load cell</button>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td class='col s6'>
+        {% for pin in data.pins %}
+        <p>The {{ data.pins[pin].name }}
+          {% if data.pins[pin].state == true %}
+          is currently on (<a href='/set/{{pin}}/off'>turn off</a>)
+          {% else %}
+          is currently off (<a href='/set/{{pin}}/on'>turn on</a>)
+          {% endif %}
+        </p>
+        <a href='/set/{{pin}}/toggle'>Toggle</a>
+        {% endfor %}
+        {% if message %}
+        <h2>{{ message }}</h2>
+        {% endif %}</td><td class='col s6'>
+      </td>
+      <td class='col s6'></td>
+    </tr>
+  </table>
+</div>
