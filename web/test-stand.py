@@ -1,32 +1,54 @@
 from flask import Flask, render_template, request
 import subprocess
 import sys
-test = True
-if not test:
-    import RPi.GPIO as GPIO
-    GPIO.setmode(GPIO.bcm)
+import random
+import shutil
+import json
+import time
+import os
+
+## SET UP VARIABLES
+global testProcess
 
 app = Flask(__name__)
 
-# stores the background tast
-background_task = None
+ONLED     = 3
+STATUSLED = 4
+RELAYPIN  = 10
 
-# Create a dictionary called pins to store the pin number, name, and pin state:
+TESTING = True
+
+# change into script directory, explosive-bakery/web
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+os.chdir(dname)
+
+## GPIO SETUP
+
+# setup GPIO if not in test mode
+
 pins = {
-    24 : {'name': 'LED', 'state' : True},
+    ONLED     : {'name': 'Power LED', 'state' : True},
+    STATUSLED : {'name': 'Status LED', 'state' : False},
+    RELAYPIN  : {'name': 'Relay Pin', 'state': False}
 }
 
-# Set each pin as an output and make it low:
-if not test:
+if not TESTING:
+    import RPi.GPIO as GPIO
+    GPIO.setmode(GPIO.bcm)
+
+    # set pins
     for pin in pins:
        GPIO.setup(pin, GPIO.OUT)
-       GPIO.output(pin, GPIO.LOW)
+       GPIO.output(pin, GPIO.LOW if pins[pin]['state'] else GPIO.HIGH)
 
+## ROUTES
+# index : get current pin state, return pin data on index
 @app.route("/")
 def main():
-    global test
+    global TESTING
     # For each pin, read the pin state and store it in the pins dictionary:
-    if not test:
+    if not TESTING:
         for pin in pins:
             pins[pin]['state'] = GPIO.input(pin)
 
@@ -34,10 +56,63 @@ def main():
     templateData = {'pins' : pins, 'launchReady' : False}
     return render_template('bnasa.html', data=templateData)
 
+# maketest : initializes a new test from a form with the required information,
+#            batch name, launch date, rocket information
+@app.route('/maketest', methods=['GET', 'POST'])
+def maketest():
+    info = dict(request.form)
+    # count number of tests and increment for this one
+    dirs = os.walk('tests').next()[1]
+    ident = len(dirs) + 1
+    if ident < 10:
+        id_str = '00%s' % ident
+    elif ident >= 10 and ident < 100:
+        id_str = '0%s' % ident
+    else:
+        id_str = '%s' % ident
 
-# The function below is executed when someone requests a URL with the pin number and action in it:
-@app.route("/set/<changePin>/<action>")
-def action(changePin, action):
+    folder_name = './tests/%s-%s' % (id_str, info['new-test-name'][0])
+    os.mkdir(folder_name)
+    returnData = {'worked': True,
+                  'id': ident,
+                  'folder': folder_name}
+
+    return json.dumps(returnData)
+
+# starttest
+@app.route('/starttest/<ident>')
+def starttest(ident):
+    print ident
+    global testProcess
+    testProcess = subprocess.Popen(['python', 'looper.py'])
+    return 'true'
+
+@app.route('/readload')
+def readload():
+    return json.dumps(random.randint(0, 10000))
+
+@app.route('/stoptest/<ident>')
+def stoptest(ident):
+    global testProcess
+    testProcess.send_signal(2)
+    time.sleep(0.01)
+    return json.dumps(open('/tmp/hi.txt').read())
+
+@app.route('/cancel/<ident>')
+def canceltest(ident):
+    filt = lambda x: int(x[0:3]) == int(ident)
+    id_folders = filter(filt, os.listdir('tests'))
+    if len(id_folders) > 1:
+        raise Exception('two folders found with matching id')
+    elif len(id_folders) == 0:
+        raise Exception('folder doesn\'t exist')
+    else:
+        shutil.rmtree('tests/%s' % id_folders[0])    
+        return 'true'
+
+# The function below is executed when someone requests a URL with
+# the pin number and action in it
+def updatePin(changePin, action):
     # Convert the pin from the URL into an integer:
     changePin = int(changePin)
     # If the action part of the URL is "on," execute the code indented below:
@@ -57,36 +132,7 @@ def action(changePin, action):
 
     # For each pin, read the pin state and store it in the pins dictionary:
     for pin in pins:
-      pins[pin]['state'] = GPIO.input(pin)
-
-   # Along with the pin dictionary, put the message into the template data dictionary:
-    templateData = {
-        'message' : message,
-        'pins' : pins
-    }
-
-    return render_template('bnasa.html', **templateData)
-
-@app.route('/bogusstart')
-def bogustrue():
-    templateData = {'pins': pins, 'launchReady': True}
-    return render_template('bnasa.html', data=templateData)
-
-@app.route("/bgstart")
-def start_background_task():
-    global background_task
-    background_task = subprocess.Popen(['python', 'background_task.py'],
-                                       stdin=subprocess.PIPE,
-                                       stdout=subprocess.PIPE)
-    print background_task
-    return 'Background task started at ' + str(background_task)
-
-@app.route("/bgstop/<msg>")
-def stop_background_task(msg):
-    global background_task
-    background_task.stdin.write("{}\n".format(msg))
-    background_task_return = background_task.stdout.read()
-    return 'Background tast stopped. It returned {}'.format(background_task_return)
+        pins[pin]['state'] = GPIO.input(pin)
 
 if __name__ == "__main__":
     ip = '127.0.0.1'
