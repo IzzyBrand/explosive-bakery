@@ -1,0 +1,31 @@
+<form method='post' name='new-test' id='new-test-form'>
+  <div id='new-test-form' class='section row'>
+    <div class='inputs col s12'>
+      <div class='input-field required col s4'>
+        <input type='text' name='new-test-name' data-error='Required' class='validate' id='new-test-name'>
+        <label for='new-test-name'>Batch Name</label>
+      </div>
+      <div class='col s2 required input-field'>
+        <input type='date' data-error='Required' name='new-test-date' class='validate' id='new-test-date'>
+      </div>
+      <div class='col s2 required input-field'>
+        <input type='number' data-error='Required' class='validate' id='new-test-length' name='new-test-length'>
+        <label for='new-test-length'>Length</label>
+      </div>
+      <div class='col s2 required input-field'>
+        <input type='number' data-error='Required' class='validate' id='new-test-diameter' name='new-test-diameter'>
+        <label for='new-test-diameter'>Diameter</label>
+      </div>
+      <div class='col s6 input-field'>
+        <textarea id='new-test-notes' class='materialize-textarea' name='new-test-notes'></textarea>
+        <label for='new-test-notes'>Notes</label>
+      </div>
+    </div>
+    <div class='buttons'>
+      <button type='button' id='new-test-button' onclick='newTest(this)' class='btn waves-light red lighten-1 col s2 m2'>New Test</button>
+      <button type='button' id='start-test-button' onclick='startTest(this)' class='btn waves-light red lighten-1 col s2 m2 hidden'>Ignite</button>
+      <button type='button' id='cancel-test-button' onclick='cancelTest(this)' class='btn waves-light red hidden col s2 m2'>Cancel Test</button>
+      <button type='button' id='stop-test-button' onclick='stopTest(this)' class='btn waves-light red hidden col s2 m2'>Stop Test</button>
+    </div>
+  </div>
+</form>
