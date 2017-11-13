@@ -13,7 +13,8 @@ $(document).ready(function(){
             url:'/maketest',
             type:'post',
             data:$('form#new-test-form').serialize(),
-            success: newTestDone
+            success: newTestDone,
+            error: newTestFail
         });
     });
 });
@@ -55,6 +56,10 @@ function newTestDone(resp) {
     $('#new-test-button').prop('disabled', true);
     $('form#new-test-form').find('input').prop('disabled', true);
     $('button#cancel-test-button').removeClass('hidden');
+}
+
+function newTestFail(resp) {
+    console.log(resp.responseText);
 }
 
 function startTest(x) {
@@ -118,4 +123,14 @@ function cancelComplete(resp) {
 function cancelFailure(resp) {
     Materialize.toast('Error in cancelling test');
 }
+
+function checkConnection() {
+    $.ajax({url: '/check', error: disconnect})
+}
+
+function disconnect(resp) {
+    Materialize.toast('Connection lost...', 2000);
+}
+
+setInterval(checkConnection, 1000);
 

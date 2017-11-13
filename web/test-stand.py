@@ -134,6 +134,10 @@ def updatePin(changePin, action):
     for pin in pins:
         pins[pin]['state'] = GPIO.input(pin)
 
+@app.route('/check')
+def check():
+    return 'true'
+
 if __name__ == "__main__":
     ip = '127.0.0.1'
     if (len(sys.argv) > 1): ip = sys.argv[1]
