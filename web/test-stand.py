@@ -100,6 +100,8 @@ def stoptest(ident):
 
 @app.route('/cancel/<ident>')
 def canceltest(ident):
+    # first three letters of test folder are their id
+    # here, get the corresponding folder and delete it
     filt = lambda x: int(x[0:3]) == int(ident)
     id_folders = filter(filt, os.listdir('tests'))
     if len(id_folders) > 1:
@@ -133,6 +135,10 @@ def updatePin(changePin, action):
     # For each pin, read the pin state and store it in the pins dictionary:
     for pin in pins:
         pins[pin]['state'] = GPIO.input(pin)
+
+@app.route('/check')
+def check():
+    return 'true'
 
 if __name__ == "__main__":
     ip = '127.0.0.1'
