@@ -27,3 +27,12 @@ h2 {
 div.buttons button {
     margin-right: 1em;
 }
+
+ul#data-collection li {
+    cursor: pointer;
+}
+
+#data-modal {
+    width: 80%;
+    height: 80%;
+}

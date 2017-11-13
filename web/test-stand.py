@@ -5,6 +5,7 @@ import random
 import shutil
 import json
 import time
+import csv
 import os
 
 ## SET UP VARIABLES
@@ -41,6 +42,27 @@ if not TESTING:
     for pin in pins:
        GPIO.setup(pin, GPIO.OUT)
        GPIO.output(pin, GPIO.LOW if pins[pin]['state'] else GPIO.HIGH)
+
+def path_from_id(ident):
+    def checker(x):
+        if len(x) < 4:
+            return False
+        else:
+            try:
+                int(x[0:3])
+                return True
+            except ValueError:
+                return False
+    
+    filt = lambda x: int(x[0:3]) == int(ident)
+    id_folders = filter(filt, filter(checker, os.listdir('tests')))
+    if len(id_folders) > 1:
+        raise Exception('two folders found with matching id')
+    elif len(id_folders) == 0:
+        raise Exception('folder doesn\'t exist')
+    else:
+        return 'tests/%s' % id_folders[0]
+    
 
 ## ROUTES
 # index : get current pin state, return pin data on index
@@ -82,9 +104,9 @@ def maketest():
 # starttest
 @app.route('/starttest/<ident>')
 def starttest(ident):
-    print ident
     global testProcess
-    testProcess = subprocess.Popen(['python', 'looper.py'])
+    testProcess = subprocess.Popen(['python', 'looper.py',
+                                    path_from_id(ident)])
     return 'true'
 
 @app.route('/readload')
@@ -102,15 +124,35 @@ def stoptest(ident):
 def canceltest(ident):
     # first three letters of test folder are their id
     # here, get the corresponding folder and delete it
-    filt = lambda x: int(x[0:3]) == int(ident)
-    id_folders = filter(filt, os.listdir('tests'))
-    if len(id_folders) > 1:
-        raise Exception('two folders found with matching id')
-    elif len(id_folders) == 0:
-        raise Exception('folder doesn\'t exist')
-    else:
-        shutil.rmtree('tests/%s' % id_folders[0])    
-        return 'true'
+    shutil.rmtree(path_from_id(ident))    
+    return 'true'
+
+@app.route('/getdata')
+def getdata():
+    # right now, just get all the folders no info about them
+    def checker(x):
+        if len(x) < 4:
+            return False
+        else:
+            try:
+                int(x[0:3])
+                return True
+            except ValueError:
+                return False
+    
+    folders = filter(checker, os.listdir('tests'))
+    ids = map(lambda x: int(x[0:3]), folders)
+    return json.dumps(zip(folders, ids))
+
+@app.route('/transferdata/<ident>')
+def transfer_data(ident):
+    path = os.path.join(path_from_id(ident), 'log.txt')
+    f = open(path, 'r')
+    data = f.read()
+    f.close()
+    data = map(lambda x: map(float, x.split(', ')),
+               filter(None, data.split('\n')))
+    return json.dumps(data)
 
 # The function below is executed when someone requests a URL with
 # the pin number and action in it

@@ -17,6 +17,13 @@ $(document).ready(function(){
             error: newTestFail
         });
     });
+    $.ajax({url: '/getdata',
+            complete: prepareSuccess,
+            error: prepareFail});
+    $('.modal').modal({
+        complete: function() {$('#data-collection li').removeClass('active')},
+        startingTop: '4%', // Starting top style attribute
+        endingTop: '10%'}); // Ending top style attribute});
 });
 
 function newTest(x) {
@@ -47,7 +54,6 @@ function newTestDone(resp) {
         Materialize.Toast('Error...', 300);
         return;
     }
-    console.log(resp);
     id = resp['id']
     $('div.buttons button').data('id', id);
 
@@ -59,6 +65,7 @@ function newTestDone(resp) {
 }
 
 function newTestFail(resp) {
+    Materialize.toast('Failure in making new test');
     console.log(resp.responseText);
 }
 
@@ -70,7 +77,6 @@ function startTest(x) {
 }
 
 function startSuccess(resp) {
-    console.log('uh');
     button = $('#start-test-button');
     button.prop('disabled', true);
     cancelButton = $('button#cancel-test-button')
@@ -97,7 +103,8 @@ function testDone(resp) {
     buttons.prop('disabled', false);
     buttons.addClass('hidden');
     $('#new-test-button').prop('disabled', false);
-    $('.buttons button').removeData('id')
+    $('.buttons button').removeData('id');
+    $('input').prop('disabled', false);
 }
 
 function testFail(resp) {
@@ -122,6 +129,65 @@ function cancelComplete(resp) {
 
 function cancelFailure(resp) {
     Materialize.toast('Error in cancelling test');
+}
+
+function prepareSuccess(resp) {
+    folders = JSON.parse(resp.responseText);
+    for (i=0;i<folders.length;i++) {
+        addData(folders[i][0],
+                folders[i][1],
+                i);
+    }
+}
+
+function addData(name, ident, i) {
+    template = $('li#data-template');
+    dataUl = $('ul#data-collection');
+    newF = template.clone();
+    newF.text(name);
+    newF.prop('id', 'li-' + i);
+    newF.data('id', ident)
+    newF.removeClass('hidden');
+    dataUl.append(newF);
+}
+
+function prepareFail(resp) {
+    Materialize.toast('failure loading data');
+}
+
+function dataOpen(x) {
+    li = $(x);
+    $('ul#data-collection li').removeClass('active');
+    li.addClass('active');
+
+    modal = $('#data-modal');
+    modal.find('#data-header').text(li.text());
+    modal.find('#modal-content').text('Loading...');
+    $.ajax({url: '/transferdata/' + li.data('id'),
+            complete: transferComplete,
+            error: function(){Materialize.toast('Error transfering data', 4000)}})
+    modal.modal('open');
+}
+
+function transferComplete(resp) {
+    resp2 = JSON.parse(resp.responseText);
+    $('#modal-content').text('');
+    times = [];
+    loads = [];
+    for (i = 0; i < resp2.length; i++) {
+        times.push(resp2[i][0]);
+        loads.push(resp2[i][1]);
+    }
+    var data = [
+    {
+        x: times,
+        y: loads,
+        type: 'scatter'
+    }
+    ];
+
+    Plotly.newPlot('plot-div', data);
+    // $('#modal-content').text(resp.responseText);
 }
 
 function checkConnection() {
