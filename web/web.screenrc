@@ -23,6 +23,6 @@ stuff "vim flask_tutorial.py\n"
 screen -t " test"
 
 screen -t " run"
-stuff "python flask_tutorial.py\n"
+stuff "python test-stand.py\n"
 
 
