@@ -1,12 +1,20 @@
 from flask import Flask, render_template, request
-import subprocess
-import sys
 import random
+
+# system tools
+import sys
 import shutil
-import json
-import time
-import csv
 import os
+import time
+
+# IO tools
+import subprocess
+import json
+import csv
+
+# math tools
+import numpy as np
+import scipy.integrate as spi
 
 ## SET UP VARIABLES
 global testProcess
@@ -17,6 +25,12 @@ ONLED     = 3
 STATUSLED = 4
 RELAYPIN  = 10
 
+# log file name
+# before changing this, rename all of current verison to new version
+LOG_NAME = 'log.txt'
+
+# True  : run on local computer,
+# False : run on test stand
 TESTING = True
 
 # change into script directory, explosive-bakery/web
@@ -62,7 +76,6 @@ def path_from_id(ident):
         raise Exception('folder doesn\'t exist')
     else:
         return 'tests/%s' % id_folders[0]
-    
 
 ## ROUTES
 # index : get current pin state, return pin data on index
@@ -146,7 +159,7 @@ def getdata():
 
 @app.route('/transferdata/<ident>')
 def transfer_data(ident):
-    path = os.path.join(path_from_id(ident), 'log.txt')
+    path = os.path.join(path_from_id(ident), LOG_NAME)
     f = open(path, 'r')
     data = f.read()
     f.close()
@@ -177,6 +190,22 @@ def updatePin(changePin, action):
     # For each pin, read the pin state and store it in the pins dictionary:
     for pin in pins:
         pins[pin]['state'] = GPIO.input(pin)
+
+# POST with [lower_endpoint, upper_endpoint] data with JSON format
+@app.route('/setendpoints/<ident>', methods=['GET', 'POST'])
+def setendpoints(ident):
+    lower, upper = request.json
+    log_file = os.path.join(path_from_id(ident), LOG_NAME)
+    f = open(log_file)
+    data = map(lambda l: map(float, l),
+               list(csv.reader(f)))
+
+    f.close()
+    filt = lambda row: row[0] >= lower and row[0] <= upper
+    data = filter(filt, data)
+    X = np.array(data)
+    integrand = spi.trapz(X[:, 1], X[:,0])
+    return json.dumps(integrand)
 
 @app.route('/check')
 def check():

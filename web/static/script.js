@@ -66,7 +66,6 @@ function newTestDone(resp) {
 
 function newTestFail(resp) {
     Materialize.toast('Failure in making new test');
-    console.log(resp.responseText);
 }
 
 function startTest(x) {
@@ -143,12 +142,12 @@ function prepareSuccess(resp) {
 function addData(name, ident, i) {
     template = $('li#data-template');
     dataUl = $('ul#data-collection');
-    newF = template.clone();
-    newF.text(name);
-    newF.prop('id', 'li-' + i);
-    newF.data('id', ident)
-    newF.removeClass('hidden');
-    dataUl.append(newF);
+    newLi = template.clone();
+    newLi.text(name);
+    newLi.prop('id', 'li-' + i);
+    newLi.data('id', ident)
+    newLi.removeClass('hidden');
+    dataUl.append(newLi);
 }
 
 function prepareFail(resp) {
@@ -159,8 +158,10 @@ function dataOpen(x) {
     li = $(x);
     $('ul#data-collection li').removeClass('active');
     li.addClass('active');
-
+    ident = li.data('id');
     modal = $('#data-modal');
+    modal.removeData('id');
+    modal.data('id', ident);
     modal.find('#data-header').text(li.text());
     modal.find('#modal-content').text('Loading...');
     $.ajax({url: '/transferdata/' + li.data('id'),
@@ -170,13 +171,13 @@ function dataOpen(x) {
 }
 
 function transferComplete(resp) {
-    resp2 = JSON.parse(resp.responseText);
+    parsed = JSON.parse(resp.responseText);
     $('#modal-content').text('');
     times = [];
     loads = [];
-    for (i = 0; i < resp2.length; i++) {
-        times.push(resp2[i][0]);
-        loads.push(resp2[i][1]);
+    for (i = 0; i < parsed.length; i++) {
+        times.push(parsed[i][0]);
+        loads.push(parsed[i][1]);
     }
     var data = [
     {
@@ -185,9 +186,43 @@ function transferComplete(resp) {
         type: 'scatter'
     }
     ];
-
-    Plotly.newPlot('plot-div', data);
+    var layout = {
+        title: 'Thrust data',
+        xaxis: {
+            rangeslider: {}
+        },
+        yaxis: {
+            fixedrange: true
+        }
+    };
+    Plotly.newPlot('plot-div', data, layout);
     // $('#modal-content').text(resp.responseText);
+}
+
+function setEndpoints(x) {
+    button = $(x);
+    modal = $('#data-modal');
+    ident = modal.data('id');
+    button.prop('disabled', true);
+    plot = $('#plot-div');
+    xrange = plot.prop('layout')['xaxis'].range
+    $.ajax({url: '/setendpoints/' + ident,
+            type: 'POST',
+            data: JSON.stringify(xrange, null, '\t'),
+            contentType: 'application/json',
+            success: endpointsSet,
+            error: function(err) {
+                if (err.responseText.includes('IndexError')) {
+                    Materialize.toast('Not enough datapoints', 3000)}
+                else {
+                    Materialize.toast('Endpoint set error');
+                }}
+            });
+}
+
+function endpointsSet(resp) {
+    impulse = JSON.parse(resp);
+    $('#data-impulse').text('Impulse: ' + impulse.toFixed(3));
 }
 
 function checkConnection() {
