@@ -14,7 +14,7 @@ import csv
 
 # math tools
 import numpy as np
-import scipy.integrate as spi
+#import scipy.integrate as spi
 
 ## SET UP VARIABLES
 global testProcess
@@ -212,6 +212,6 @@ def check():
     return 'true'
 
 if __name__ == "__main__":
-    ip = '127.0.0.1'
+    ip = '0.0.0.0'
     if (len(sys.argv) > 1): ip = sys.argv[1]
     app.run(host=ip, debug=True)

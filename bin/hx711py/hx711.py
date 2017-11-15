@@ -1,6 +1,6 @@
 import RPi.GPIO as GPIO
 import time
-import numpy  # sudo apt-get python-numpy
+import numpy as np  # sudo apt-get python-np
 
 class HX711:
     def __init__(self, dout, pd_sck, gain=128):
@@ -54,7 +54,7 @@ class HX711:
         while not self.is_ready():
             #print("WAITING")
             pass
-
+        # creates a 3x8 list containing falses
         dataBits = [self.createBoolList(), self.createBoolList(), self.createBoolList()]
         dataBytes = [0x0] * 4
 
@@ -63,7 +63,8 @@ class HX711:
                 GPIO.output(self.PD_SCK, True)
                 dataBits[j][i] = GPIO.input(self.DOUT)
                 GPIO.output(self.PD_SCK, False)
-            dataBytes[j] = numpy.packbits(numpy.uint8(dataBits[j]))
+                #time.sleep(1./20000000.)
+            dataBytes[j] = np.packbits(np.uint8(dataBits[j]))
 
         #set channel and gain factor for next reading
         for i in range(self.GAIN):
@@ -75,7 +76,7 @@ class HX711:
         #    return long(self.lastVal)
 
         dataBytes[2] ^= 0x80
-
+        #print '{}\t{}\t{}\t{}'.format(dataBytes[0][0], dataBytes[1][0], dataBytes[2][0], dataBytes[3])
         return dataBytes
 
     def get_binary_string(self):
@@ -102,16 +103,13 @@ class HX711:
 
     def read_np_arr8(self):
         dataBytes = self.read()
-        np_arr8 = numpy.uint8(dataBytes)
-
+        np_arr8 = np.uint8(dataBytes)
         return np_arr8
 
     def read_long(self):
         np_arr8 = self.read_np_arr8()
         np_arr32 = np_arr8.view('uint32')
-        self.lastVal = np_arr32
-
-        return long(self.lastVal)
+        return long(np_arr32)
 
     def read_average(self, times=3):
         values = long(0)
@@ -119,6 +117,9 @@ class HX711:
             values += self.read_long()
 
         return values / times
+    
+    def get_one(self):
+        return (self.read_long() - self.OFFSET)/self.REFERENCE_UNIT
 
     def get_value(self, times=3):
         return self.read_average(times) - self.OFFSET

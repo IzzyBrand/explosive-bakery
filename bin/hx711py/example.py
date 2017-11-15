@@ -38,7 +38,7 @@ while True:
         #binary_string = hx.get_binary_string()
         #print binary_string + " " + np_arr8_string
         t = time.time()
-        sys.stdout.write('Weight: {}\tFrequency: {}\t\r'.format(hx.get_weight(1), 1./ (t-prev_t)))
+        sys.stdout.write('Weight: {}\tFrequency: {}\t\r'.format(hx.get_one(), 1./ (t-prev_t)))
         sys.stdout.flush()
         prev_t = t
 
