@@ -13,5 +13,6 @@
 *.mov
 Dropbox
 *.pdf
-
+*.swp
+*.swo
 *.h264
