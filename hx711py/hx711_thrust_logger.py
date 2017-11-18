@@ -14,7 +14,7 @@ RELAY_PIN   = 24
 
 class ThrustLogger():
     def __init__(self, filename):
-        self.data_directory = './thrust-tests/'
+        self.data_directory = '../thrust-tests/'
         self.prep_file(filename)
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(LED_PIN, GPIO.OUT)
@@ -22,27 +22,29 @@ class ThrustLogger():
         self.ignite_start = -1
         self.ignite_duration = 5.
         self.hx = HX711(DATA_PIN, CLOCK_PIN)
+        self.hx.set_reading_format("LSB", "MSB")
+        self.hx.set_reference_unit(92)
         self.hx.reset()
-        self.hx.tare()
+        self.hx.tare(100)
         self.start_time = time.time()
         self.times = []
         self.thrusts = []
         GPIO.output(LED_PIN, True)
 
     def step(self):
-        self.times.append(time.time() - start_time)
-        self.thrusts.append(hx.get_one())
+        self.times.append(time.time() - self.start_time)
+        self.thrusts.append(self.hx.get_one())
         if self.times[-1] > 1.0 and self.ignite_start == -1:
             print 'IGNITER ON'
             self.ignite_start = self.times[-1]
-            self.GPIO.output(RElAY_PIN, True)
-        elif self.times[-1] - self.ignite_start > self.ignite_duration:
+            GPIO.output(RELAY_PIN, True)
+        elif self.times[-1] - self.ignite_start > self.ignite_duration and GPIO.input(RELAY_PIN):
             print 'IGNITER OFF'
-            self.GPIO.output(RElAY_PIN, False)
+            GPIO.output(RELAY_PIN, False)
 
     def prep_file(self, filename):
         self.foldername = self.data_directory + '/' + filename.replace(" ","")
-        self.filename = self.foldername if self.foldername.endswith(".txt") else (self.foldername + ".txt")
+        self.filename = self.foldername + '/' + (filename if filename.endswith(".txt") else (filename + ".txt"))
         if os.path.exists(self.filename):
             print self.filename, 'already exists. Please choose another name.'
             sys.exit(1)
@@ -55,14 +57,14 @@ class ThrustLogger():
         try:
             with open(self.filename, 'w') as f:
                 for time, thrust in zip(self.times, self.thrusts):
-                    f.write('{},\t{}\n').format(time, thrust)
+                    f.write('{},\t{}\n'.format(time, thrust))
             print 'Data written to', self.filename
         except Exception as e:
             backup_filename = datetime.now().strftime("backup_%Y-%m-%d_%H:%M:%S.txt")
             print 'Failed to write to {}. Saving backup to {}.'.format(self.filename, backup_filename)
             with open(backup_filename, 'w') as f:
                 for time, thrust in zip(self.times, self.thrusts):
-                    f.write('{},\t{}\n').format(time, thrust)
+                    f.write('{},\t{}\n'.format(time, thrust))
             print 'Data written to', backup_filename
 
     def cleanup(self):
