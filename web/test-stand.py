@@ -204,7 +204,7 @@ def setendpoints(ident):
     filt = lambda row: row[0] >= lower and row[0] <= upper
     data = filter(filt, data)
     X = np.array(data)
-    integrand = spi.trapz(X[:, 1], X[:,0])
+    integrand = -1 #spi.trapz(X[:, 1], X[:,0])
     return json.dumps(integrand)
 
 @app.route('/check')

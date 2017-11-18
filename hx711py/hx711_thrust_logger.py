@@ -11,16 +11,18 @@ CLOCK_PIN   = 6
 LED_PIN     = 23
 RELAY_PIN   = 24
 
-
 class ThrustLogger():
     def __init__(self, filename):
-        self.data_directory = '../thrust-tests/'
+        bakery = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.data_directory = '%s/web/thrust-tests' % bakery
         self.prep_file(filename)
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(LED_PIN, GPIO.OUT)
         GPIO.setup(RELAY_PIN, GPIO.OUT)
+        GPIO.output(LED_PIN, False)
+        GPIO.output(RELAY_PIN, False)
         self.ignite_start = -1
-        self.ignite_duration = 5.
+        self.ignite_duration = 2.
         self.hx = HX711(DATA_PIN, CLOCK_PIN)
         self.hx.set_reading_format("LSB", "MSB")
         self.hx.set_reference_unit(92)
