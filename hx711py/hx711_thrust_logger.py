@@ -34,13 +34,18 @@ class ThrustLogger():
     def step(self):
         self.times.append(time.time() - self.start_time)
         self.thrusts.append(self.hx.get_one())
-        if self.times[-1] > 1.0 and self.ignite_start == -1:
-            print 'IGNITER ON'
-            self.ignite_start = self.times[-1]
-            GPIO.output(RELAY_PIN, True)
+        if self.ignite_start == -1 and self.times[-1] > 0.2:
+            if self.verify_data():
+                print 'IGNITER ON'
+                self.ignite_start = self.times[-1]
+                GPIO.output(RELAY_PIN, True)
+            else: print 'Data is too homogenous or not enough readings. Waiting to ignite.'
         elif self.times[-1] - self.ignite_start > self.ignite_duration and GPIO.input(RELAY_PIN):
             print 'IGNITER OFF'
             GPIO.output(RELAY_PIN, False)
+
+    def verify_data(self):
+        return len(self.data) > 10 and (min(self.data) != max(self.data))
 
     def prep_file(self, filename):
         self.foldername = self.data_directory + '/' + filename.replace(" ","")
