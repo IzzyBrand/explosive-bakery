@@ -45,7 +45,7 @@ class ThrustLogger():
             GPIO.output(RELAY_PIN, False)
 
     def verify_data(self):
-        return len(self.data) > 10 and (min(self.data) != max(self.data))
+        return len(self.thrusts) > 10 and (min(self.thrusts) != max(self.thrusts))
 
     def prep_file(self, filename):
         self.foldername = self.data_directory + '/' + filename.replace(" ","")
