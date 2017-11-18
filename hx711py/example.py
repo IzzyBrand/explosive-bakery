@@ -1,4 +1,5 @@
 import RPi.GPIO as GPIO
+import numpy as np
 import time
 import sys
 from hx711 import HX711
