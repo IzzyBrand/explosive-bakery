@@ -30,6 +30,7 @@ class ThrustLogger():
         self.hx.tare(100)
         self.start_time = time.time()
         self.times = []
+        self.triggered = False
         self.thrusts = []
         GPIO.output(LED_PIN, True)
 
@@ -42,8 +43,9 @@ class ThrustLogger():
                 self.ignite_start = self.times[-1]
                 GPIO.output(RELAY_PIN, True)
             else: print 'Data is too homogenous or not enough readings. Waiting to ignite.'
-        elif self.times[-1] - self.ignite_start > self.ignite_duration and GPIO.input(RELAY_PIN):
+        elif self.times[-1] - self.ignite_start > self.ignite_duration and not self.triggered:
             print 'IGNITER OFF'
+            self.triggered = True
             GPIO.output(RELAY_PIN, False)
 
     def verify_data(self):
@@ -64,7 +66,7 @@ class ThrustLogger():
         try:
             with open(self.filename, 'w') as f:
                 for time, thrust in zip(self.times, self.thrusts):
-                    f.write('{},\t{}\n'.format(time, thrust))
+                    f.write('{},{}\n'.format(time, thrust))
             print 'Data written to', self.filename
         except Exception as e:
             backup_filename = datetime.now().strftime("backup_%Y-%m-%d_%H:%M:%S.txt")
@@ -92,6 +94,7 @@ if __name__ == '__main__':
         try:
             logger.step()
         except KeyboardInterrupt:
+            print 'interrupt'
             break
         except Exception as e:
             print e

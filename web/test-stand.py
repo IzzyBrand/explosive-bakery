@@ -37,6 +37,8 @@ TESTING = True
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 os.chdir(dname)
+bakery_path = os.path.dirname(dname)
+hx711_path = os.path.join(bakery_path, 'hx711py')
 
 ## GPIO SETUP
 
@@ -69,13 +71,13 @@ def path_from_id(ident):
                 return False
     
     filt = lambda x: int(x[0:3]) == int(ident)
-    id_folders = filter(filt, filter(checker, os.listdir('tests')))
+    id_folders = filter(filt, filter(checker, os.listdir('thrust-tests')))
     if len(id_folders) > 1:
         raise Exception('two folders found with matching id')
     elif len(id_folders) == 0:
         raise Exception('folder doesn\'t exist')
     else:
-        return 'tests/%s' % id_folders[0]
+        return 'thrust-tests/%s' % id_folders[0]
 
 ## ROUTES
 # index : get current pin state, return pin data on index
@@ -97,7 +99,7 @@ def main():
 def maketest():
     info = dict(request.form)
     # count number of tests and increment for this one
-    dirs = os.walk('tests').next()[1]
+    dirs = os.walk('thrust-tests').next()[1]
     ident = len(dirs) + 1
     if ident < 10:
         id_str = '00%s' % ident
@@ -105,8 +107,8 @@ def maketest():
         id_str = '0%s' % ident
     else:
         id_str = '%s' % ident
-
-    folder_name = './tests/%s-%s' % (id_str, info['new-test-name'][0])
+    
+    folder_name = './thrust-tests/%s-%s' % (id_str, info['new-test-name'][0])
     os.mkdir(folder_name)
     returnData = {'worked': True,
                   'id': ident,
@@ -118,8 +120,9 @@ def maketest():
 @app.route('/starttest/<ident>')
 def starttest(ident):
     global testProcess
-    testProcess = subprocess.Popen(['python', 'looper.py',
-                                    path_from_id(ident)])
+    time.sleep(4)
+    testProcess = subprocess.Popen(['python', os.path.join(hx711_path, 'hx711_thrust_logger.py'),
+                                    os.path.split(path_from_id(ident))[1]])
     return 'true'
 
 @app.route('/readload')
@@ -131,7 +134,10 @@ def stoptest(ident):
     global testProcess
     testProcess.send_signal(2)
     time.sleep(0.01)
-    return json.dumps(open('/tmp/hi.txt').read())
+    path = path_from_id(ident)
+    test_name = os.path.split(path)[1]
+    path = os.path.join(path, '%s.txt' % test_name)
+    return json.dumps(open(path).read())
 
 @app.route('/cancel/<ident>')
 def canceltest(ident):
@@ -153,17 +159,19 @@ def getdata():
             except ValueError:
                 return False
     
-    folders = filter(checker, os.listdir('tests'))
+    folders = filter(checker, os.listdir('thrust-tests'))
     ids = map(lambda x: int(x[0:3]), folders)
     return json.dumps(zip(folders, ids))
 
 @app.route('/transferdata/<ident>')
 def transfer_data(ident):
-    path = os.path.join(path_from_id(ident), LOG_NAME)
+    base_path = path_from_id(ident)
+   
+    path = os.path.join(base_path, '%s.txt' % os.path.split(base_path)[1])
     f = open(path, 'r')
     data = f.read()
     f.close()
-    data = map(lambda x: map(float, x.split(', ')),
+    data = map(lambda x: map(float, x.split(',')),
                filter(None, data.split('\n')))
     return json.dumps(data)
 
