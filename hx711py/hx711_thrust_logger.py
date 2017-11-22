@@ -36,7 +36,7 @@ class ThrustLogger():
 
     def step(self):
         self.times.append(time.time() - self.start_time)
-        self.thrusts.append(self.hx.get_one())
+        self.thrusts.append(-1. * self.hx.get_one())
         if self.ignite_start == -1 and self.times[-1] > 0.2:
             if self.verify_data():
                 print 'IGNITER ON'
