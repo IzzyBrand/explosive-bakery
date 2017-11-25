@@ -1,49 +1,40 @@
 import numpy as np
+from finangler import FinAngler
+from pid import PID
+import time
 
-'''
-given the roll and pitch of the rocket, generates commands to be applied to the 
-servos to stabilize the rockets attitude
-'''
 class Stabilizer():
 	def __init__(self):
-		self.fin_angles = [0, 120, 240] # a list of the fins angles in degress
-		self.fin_angles = np.array(self.fin_angles) / 180. * np.pi
-		self.velocity = 1 #estimated velocity of the rocket in m/s
+		self.yaw_pid 	= PID(1,0,0)
+		self.rp_pid		= PID(1,0,0)
+		self.finagnler 	= FinAngler()
+		self.set_sp(0,0)
+		self.reset()
 
-	# takes in a desired force to be applied to the rocket and find the 
-	# appropriate fin angles to generate that force
-	# - angle: the dirction in which to apply the force
-	# - force: the magnitude of the force to be applied
-	# - spin: the amount of yaw force around the long axis to be applied
-	def calc_angles(self, angle, force, spin):
-		# the component of each fins force that contributes to the desired force
-		in_components  = np.sin(self.fin_angles - (angle/180. * np.pi))		
-		in_components  = in_components/np.linalg.norm(in_components)
-		# the component of each fins force that is out of axis with the desired force
-		out_components = np.cos(self.fin_angles - (angle/180. * np.pi))		
-		out_components = out_components/np.linalg.norm(out_components)
-		# generate a 3x3 matrix where the rows are the components and ones
-		effects_matrix = np.stack((in_components, out_components, np.ones(in_components.shape)))
-		results_matrix = np.array([force, 0, spin]).T
-		# effects * forces = results
-		fin_forces = np.linalg.lstsq(effects_matrix,results_matrix)
-		return self.forces_to_angles(fin_forces[0])
+	def step(self, r, p, y):
+		self.curr_time = time.time() - self.start_time
+		dt = self.curr_time - self.prev_time
 
-	# takes an array of fin forces and returns an array of fin angles
-	# to generate those forces. This will need to be updated with
-	# a more advanced model incorporating fin AOA in the future
-	def forces_to_angles(self, forces):
-		return np.arcsin(forces/(self.velocity**2)) / np.pi * 180.
+		angle, mag 	= self.rp_to_angle_mag(r,p)
+		rp_command 	= rp_pid.step(mag, dt)
+		yaw_command = yaw_pid.step(y, dt)
 
+		fin_angles = self.finangler(angle, rp_command, yaw_command)
 
-if __name__ == '__main__':
-	s = Stabilizer()
-	print '\nDEMO SPIN'
-	for i in range(-3,4):
-		print 'Desired spin: {:1.2f}\t fin angles: {}'.format(i/3., s.calc_angles(0,0,i/3.))
-	print '\nDEMO FORCE ANGLE'
-	for i in range(0,7):
-		print 'Desired angle: {}\t fin angles: {}'.format(i/3. * 180., s.calc_angles(i/3.*180.,1.,0))
-	print '\nDEMO FORCE'
-	for i in range(-3,4):
-		print 'Desired force: {:1.2f}\t fin angles: {}'.format(i/3., s.calc_angles(0,-i/3.,0))
+		self.prev_time = self.curr_time
+
+	def rp_to_angle_mag(self, r, p):
+		angle 	= np.atan2(r, p)
+		mag  	= np.sqrt(r**2 + p**2)
+		return angle, mag
+
+	def set_sp(self, rp, yaw):
+		self.setpoint_rp = rp
+		self.setpoint_yaw = yaw
+
+	def reset(sefl):
+		self.yaw_pid.reset()
+		self.rp_pid.reset()		
+		self.start_time = time.time()
+		self.prev_time 	= self.start_time
+		self.curr_time  = self.start_time
