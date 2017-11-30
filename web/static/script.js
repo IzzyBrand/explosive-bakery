@@ -225,6 +225,35 @@ function endpointsSet(resp) {
     $('#data-impulse').text('Impulse: ' + impulse.toFixed(3));
 }
 
+function readCell(x) {
+    button = $(x);
+    button.click(function() {stopReadCell});
+    button.text('Stop Read');
+    $('form#new-test-form div.buttons button').prop('disabled', true);
+    cellReadInterval = setInterval(function() {$.ajax({
+        url: '/readcell',
+        success: populateCellRead,
+        error: errorCellRead
+    })}, 500);
+}
+
+function populateCellRead(resp) {
+    console.log(resp);
+    cell = JSON.parse(resp);
+    $('div#readCellData').text(cell);
+}
+
+function stopReadCell(x) {
+    $('form#new-test-form div.buttons button').prop('disabled', false);
+    clearInterval(cellReadInterval);
+}
+
+function errorCellRead(resp) {
+    Materialize.toast('Error reading cell', 4000);
+    $('form#new-test-form div.buttons button').prop('disabled', false);
+    clearInterval(cellReadInterval);
+}
+
 function checkConnection() {
     $.ajax({url: '/check', error: disconnect})
 }

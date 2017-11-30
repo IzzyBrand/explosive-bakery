@@ -2,23 +2,8 @@
   {% include "test-form.html" %}
   <div class='divider'></div>
   <div id='test-actions' class='section'>
-    <button class='btn waves-light red lighten-1'>Calibrate</button>
-    <button class='btn waves-light red lighten-1'>Read load cell</button>
-  </div>
-  <div class='divider'></div>
-  <div id='pindata' class='section'>
-    {% for pin in data.pins %}
-    <p>The {{ data.pins[pin].name }}
-      {% if data.pins[pin].state == true %}
-      is currently on (<a href='/set/{{pin}}/off'>turn off</a>)
-      {% else %}
-      is currently off (<a href='/set/{{pin}}/on'>turn on</a>)
-      {% endif %}
-    </p>
-    <a href='/set/{{pin}}/toggle'>Toggle</a>
-    {% endfor %}
-    {% if message %}
-    <h2>{{ message }}</h2>
-    {% endif %}
+    <button class='btn waves-light red lighten-1' onclick='calibrate()'>Calibrate</button>
+    <button class='btn waves-light red lighten-1' onclick='readCell(this)'>Read load cell</button>
+    <div id="readCellData"></div>
   </div>
 </div>

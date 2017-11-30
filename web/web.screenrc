@@ -18,11 +18,13 @@ screen -t " git"
 stuff "ifconfig\n"
 
 screen -t " vim"
-stuff "vim flask_tutorial.py\n"
+stuff "vim test-stand.py\n"
 
 screen -t " test"
 
 screen -t " run"
 stuff "python test-stand.py\n"
 
+screen -t " test2"
 
+screen -t " test3"

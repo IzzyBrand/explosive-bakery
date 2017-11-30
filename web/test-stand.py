@@ -6,9 +6,10 @@ import sys
 import shutil
 import os
 import time
+import io
 
 # IO tools
-import subprocess
+from subprocess import Popen, PIPE, STDOUT
 import json
 import csv
 
@@ -24,10 +25,6 @@ app = Flask(__name__)
 ONLED     = 3
 STATUSLED = 4
 RELAYPIN  = 10
-
-# log file name
-# before changing this, rename all of current verison to new version
-LOG_NAME = 'log.txt'
 
 # True  : run on local computer,
 # False : run on test stand
@@ -120,9 +117,10 @@ def maketest():
 @app.route('/starttest/<ident>')
 def starttest(ident):
     global testProcess
-    time.sleep(4)
-    testProcess = subprocess.Popen(['python', os.path.join(hx711_path, 'hx711_thrust_logger.py'),
-                                    os.path.split(path_from_id(ident))[1]])
+    testProcess = Popen(['python',
+                         os.path.join(hx711_path,
+                             'thrust_logger.py'),
+                         os.path.split(path_from_id(ident))[1]])
     return 'true'
 
 @app.route('/readload')
@@ -215,11 +213,37 @@ def setendpoints(ident):
     integrand = -1 #spi.trapz(X[:, 1], X[:,0])
     return json.dumps(integrand)
 
+global read_cell_process
+global read_cell_file
+write_cell_file = open('log.txt', 'wb')
+read_cell_file = open('log.txt', 'rb')
+read_cell_process = None
+@app.route('/readcell')
+def readcell():
+    global read_cell_process
+    global read_cell_file
+    if read_cell_process is None:
+        print 'ye'
+
+        read_cell_process = Popen(['python',
+                              os.path.join(hx711_path,
+                                'thrust_reader.py')],
+                             stdout=write_cell_file)
+        return '-10000'
+    else:
+        dat = read_cell_file.read()
+        write_cell_file.truncate()
+        #dat = read_cell_process.stdout.read()
+        #print dat
+        #dat = time.time()
+        #print 'd: %s' % dat
+        return json.dumps(dat)
+
 @app.route('/check')
 def check():
     return 'true'
 
 if __name__ == "__main__":
     ip = '0.0.0.0'
-    if (len(sys.argv) > 1): ip = sys.argv[1]
+    #if (len(sys.argv) > 1): ip = sys.argv[1]
     app.run(host=ip, debug=True)
