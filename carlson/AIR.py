@@ -157,7 +157,6 @@ if __name__ == "__main__":
             if power_off:
                 if not _armed and not _logging_on:
                     print "Powering off"
-                    time.sleep(1)  # give everything a chance to die
                     debug("Power off")
                     logger.stop(target=DEBUG)  # flush and close debug file
                     os.system("sudo poweroff")
