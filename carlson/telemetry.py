@@ -5,7 +5,7 @@
 import serial
 import time
 
-PORT               = "/dev/ttyUSB0"
+PORT               = "/dev/ttyS0"
 BAUD               = 57600
 SERIAL_TIMEOUT     = 0
 TIME_BEFORE_RESEND = 0.5  # (s) how long to wait before panicking (send again)
@@ -30,5 +30,5 @@ class Telemetry:
                 print "Initialized telemetry radio."
                 return True
             except serial.serialutil.SerialException:
-                print "Radio not found, trying again."
+                print "Radio not found, trying again. Did you run as `sudo`?"
                 time.sleep(1)
