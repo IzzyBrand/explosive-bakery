@@ -228,7 +228,7 @@ if __name__ == "__main__":
             #    logger.write([time.time()-t0, "IMU_NOT_READY"])
 
         # Set chute pin high if we are using automatic apogee detection algorithm.
-        if _apogee_detected and AUTO_APOGEE_DETECT:
+        if _apogee_detected and AUTO_APOGEE_DETECT and not _chute_deployed:
             chute_pin.set_high()
             _chute_deployed = True
             _nicrome_on = True
