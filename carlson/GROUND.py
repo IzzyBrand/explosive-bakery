@@ -48,6 +48,12 @@ if __name__ == "__main__":
     input_thread.daemon = True
     input_thread.start()
 
+    print '''
+    a:\tArm
+    d:\tDisarm
+    l:\tArm and log
+    k:\tDisarm and poweroff
+    '''
     # Respond to user input, non-blocking.
     while (True):
 
