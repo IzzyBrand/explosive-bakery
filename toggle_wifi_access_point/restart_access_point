@@ -1,0 +1,21 @@
+echo "Setting Pi to Access Point mode"
+
+sudo cp access_point_conf/dhcpcd.conf.access_point /etc/dhcpcd.conf
+sudo cp access_point_conf/interfaces.access_point /etc/network/interfaces
+echo "Copied configuration files"
+
+sudo systemctl enable hostapd
+echo "Enabled hostapd"
+
+echo "Done."
+
+echo "Rebooting in 3 seconds..."
+sleep 1
+echo "2 seconds..."
+sleep 1
+echo "1 second..."
+sleep 1
+
+echo "Rebooting."
+
+sudo reboot

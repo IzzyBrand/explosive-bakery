@@ -19,9 +19,13 @@ HEARTBEAT_DELAY = 1  # seconds, how often do we send state to ground station
 BLAST_CAP_BURN_TIME = 5  # seconds, how long to keep relay shorted for
 
 # Should we debug?
-LOG_DEBUG = True  # Save debug info to a local text file
+LOG_DEBUG   = True   # Save debug info to a local text file
 # TODO: **important** THIS OPTION (UDP_DEBUG) SHOULD BE FALSE UNLESS MANUALLY SPECIFIED BY A FLAG (ARGPARSER)
-UDP_DEBUG = True  # Send info across network to another machine on the network
+UDP_DEBUG   = True   # Send info across network to another machine on the network
+LOCAL_DEBUG = True   # Print IMU data to terminal directly. Only use if ssh'd into Carlson directly.
+
+def rad2deg(rad):
+    return rad * 57.2958
 
 if __name__ == "__main__":
 
@@ -73,7 +77,7 @@ if __name__ == "__main__":
         if LOG_DEBUG: logger.write(text, lgr.DEBUG)
 
     # TODO: reorganize this; add UDP WiFi debugger status to debug file
-    if UDP_DEBUG_SOCKET_INIT_OK:
+    if UDP_DEBUG and UDP_DEBUG_SOCKET_INIT_OK: 
         debug("UDP debugger initialized OK")
     else:
         debug("UDP debugger failed to initialize")
@@ -157,7 +161,6 @@ if __name__ == "__main__":
             if power_off:
                 if not _armed and not _logging_on:
                     print "Powering off"
-                    time.sleep(1)  # give everything a chance to die
                     debug("Power off")
                     logger.stop(target=DEBUG)  # flush and close debug file
                     os.system("sudo poweroff")
@@ -193,6 +196,12 @@ if __name__ == "__main__":
                         wifidebugger.send(data_vector)
                     except:
                         pass
+                # If local debugging is enabled, print to terminal directly.
+                if LOCAL_DEBUG:
+                    print "Fused:   r: %0.4f   p: %0.4f   y: %0.4f" % \
+                            (rad2deg(data["fusionPose"][0]), 
+                            rad2deg(data["fusionPose"][1]), 
+                            rad2deg(data["fusionPose"][2]))
             #else:
             #    logger.write([time.time()-t0, "IMU_NOT_READY"])
 
