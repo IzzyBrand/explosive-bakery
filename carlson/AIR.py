@@ -10,6 +10,7 @@ import os
 
 import logger as lgr
 import wirelesscommunicator as wc
+import numpy as np
 from state import State
 from telemetry import Telemetry
 from sensor import Sensor
@@ -17,6 +18,10 @@ from gpio import Pin
 
 HEARTBEAT_DELAY = 1  # seconds, how often do we send state to ground station
 BLAST_CAP_BURN_TIME = 5  # seconds, how long to keep relay shorted for
+APOGEE_ANGLE_THRESH = 5 # angle in degrees combined rocket roll pitch at which we deploy chute
+APOGEE_COUNTER_THRESH = 10 # number of consecutive apogee detections before we deploy the chute
+
+AUTO_APOGEE_DETECT = True   # Should we use our auto-apogee detection algorithm to control the chute?
 
 # Should we debug?
 LOG_DEBUG   = True   # Save debug info to a local text file
@@ -36,9 +41,11 @@ if __name__ == "__main__":
     power_off       = False
 
     # Current state latches
-    _armed          = False
-    _logging_on     = False
-    _chute_deployed = False
+    _armed            = False
+    _logging_on       = False
+    _chute_deployed   = False  # this can only be reset if disarmed
+    _nicrome_on       = False
+    _apogee_detected  = False
 
     # Set current state of air controller and declare the time we last sent a 
     # state update to the ground station
@@ -125,6 +132,7 @@ if __name__ == "__main__":
             else:
                 if _armed:
                     _armed = False
+                    _chute_deployed = False
                     debug("Disarmed")
                     print "Disarmed"
 
@@ -138,6 +146,8 @@ if __name__ == "__main__":
                     logger.start_video()  # will only do something if camera's enabled
                     t0 = time.time()  # reset reference time
                     _logging_on = True
+                    _apogee_detected = False
+                    apogee_counter = 0
                     debug("Started logging")
                     print "Started logging"
             else:
@@ -152,6 +162,7 @@ if __name__ == "__main__":
             if chute:
                 if not _chute_deployed and _armed:
                     chute_pin.set_high()
+                    _nicrome_on = True
                     _chute_deployed = True
                     time_chute_deployed = time.time()
                     debug("Chute pin HIGH")
@@ -188,6 +199,17 @@ if __name__ == "__main__":
                     data["accel"][0],      data["accel"][1],      data["accel"][2],
                     data["gyro"][0],       data["gyro"][1],       data["gyro"][2]]
                 logger.write(data_vector)
+                
+                # APOGEE DETECTION
+
+                theta = np.degrees(np.arcsin(np.cos(data["fusionPose"][0]) * np.cos(data["fusionPose"][1])))
+                if theta < APOGEE_ANGLE_THRESH:
+                    apogee_counter += 1
+                    if apogee_counter > APOGEE_COUNTER_THRESH:
+                        _apogee_detected = True
+                else:
+                    apogee_counter = 0
+                
                 # If wifi debugging is enabled, send the data over UDP.
                 if UDP_DEBUG and UDP_DEBUG_SOCKET_INIT_OK:
                     # Try to send data over UDP, if it fails, just skip, we don't want
@@ -198,17 +220,27 @@ if __name__ == "__main__":
                         pass
                 # If local debugging is enabled, print to terminal directly.
                 if LOCAL_DEBUG:
-                    print "Fused:   r: %0.4f   p: %0.4f   y: %0.4f" % \
+                    print "Fused:   r: %0.4f   p: %0.4f   y: %0.4f   angle: %0.4f" % \
                             (rad2deg(data["fusionPose"][0]), 
                             rad2deg(data["fusionPose"][1]), 
-                            rad2deg(data["fusionPose"][2]))
+                            rad2deg(data["fusionPose"][2]),
+                            theta)
             #else:
             #    logger.write([time.time()-t0, "IMU_NOT_READY"])
 
+        # Set chute pin high if we are using automatic apogee detection algorithm.
+        if _apogee_detected and AUTO_APOGEE_DETECT and not _chute_deployed and _armed:
+            chute_pin.set_high()
+            _chute_deployed = True
+            _nicrome_on = True
+            time_chute_deployed = time.time()
+            debug("Chute pin HIGH")
+            print "Set chute pin HIGH"
+
         # Set chute pin back to LOW if blast cap burn time is reached
-        if _chute_deployed and (time.time() - time_chute_deployed > BLAST_CAP_BURN_TIME):
+        if _nicrome_on and (time.time() - time_chute_deployed > BLAST_CAP_BURN_TIME):
             chute_pin.set_low()
-            _chute_deployed = False
+            _nicrome_on = False
             debug("Chute pin LOW")
             print "Set chute pin to LOW"
 
