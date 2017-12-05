@@ -102,8 +102,12 @@ if __name__ == "__main__":
     chute_pin = Pin(4)
     debug("Initialized chute pin.")
 
-    # Inline function definitions to control chute pin behavior
+    # Inline function definitions to control chute pin behavior. Note the 
+    # unfortunate global scoping: apparently Python won't allow inline
+    # functions to modify (only read) variables from outer scopes. In order
+    # to modify the variables, we need to force a global scope.
     def trigger_chute_pin():
+        global chute_pin, _nicrome_on, _chute_deployed, time_chute_deployed
         chute_pin.set_high()
         _nicrome_on = True
         _chute_deployed = True
@@ -111,6 +115,7 @@ if __name__ == "__main__":
         debug("Chute pin HIGH")
         print "Set chute pin to HIGH"
     def untrigger_chute_pin():
+        global chute_pin, _nicrome_on
         chute_pin.set_low()
         _nicrome_on = False
         debug("Chute pin LOW")
@@ -177,6 +182,7 @@ if __name__ == "__main__":
             if chute:
                 if not _chute_deployed and _armed:
                     trigger_chute_pin()
+                    print "_chute_deployed:", _chute_deployed
 
             ### Power off ###
             if power_off:
@@ -228,6 +234,7 @@ if __name__ == "__main__":
                         wifidebugger.send(data_vector)
                     except:
                         pass
+
                 # If local debugging is enabled, print to terminal directly.
                 if LOCAL_DEBUG:
                     print "Fused:  ROLL: %0.4f  PITCH: %0.4f  YAW: %0.4f  ANGLE: %0.4f" % \
@@ -239,7 +246,7 @@ if __name__ == "__main__":
             #    logger.write([time.time()-t0, "IMU_NOT_READY"])
 
         # Set chute pin high if we are using automatic apogee detection algorithm.
-        if _apogee_detected and AUTO_APOGEE_DETECT and not _chute_deployed and _armed:
+        if AUTO_APOGEE_DETECT and _armed and _apogee_detected and not _chute_deployed:
             trigger_chute_pin()
 
         # Set chute pin back to LOW if blast cap burn time is reached
