@@ -102,20 +102,6 @@ if __name__ == "__main__":
     chute_pin = Pin(4)
     debug("Initialized chute pin.")
 
-    # Inline function definitions to control chute pin behavior
-    def trigger_chute_pin():
-        chute_pin.set_high()
-        _nicrome_on = True
-        _chute_deployed = True
-        time_chute_deployed = time.time()
-        debug("Chute pin HIGH")
-        print "Set chute pin to HIGH"
-    def untrigger_chute_pin():
-        chute_pin.set_low()
-        _nicrome_on = False
-        debug("Chute pin LOW")
-        print "Set chute pin to LOW"
-
     # Main loop
     t0 = 0
     debug("Entering program loop.")
@@ -176,7 +162,12 @@ if __name__ == "__main__":
             ### Deploy chute ###
             if chute:
                 if not _chute_deployed and _armed:
-                    trigger_chute_pin()
+                    chute_pin.set_high()
+                    _nicrome_on = True
+                    _chute_deployed = True
+                    time_chute_deployed = time.time()
+                    debug("Chute pin HIGH")
+                    print "Set chute pin to HIGH"
 
             ### Power off ###
             if power_off:
@@ -210,9 +201,8 @@ if __name__ == "__main__":
                     data["gyro"][0],       data["gyro"][1],       data["gyro"][2]]
                 logger.write(data_vector)
                 
-                # Apogee detection algorithm
-                theta = np.degrees(np.arcsin(
-                    np.cos(data["fusionPose"][0]) * np.cos(data["fusionPose"][1])))
+                # Apogee detection
+                theta = np.degrees(np.arcsin(np.cos(data["fusionPose"][0]) * np.cos(data["fusionPose"][1])))
                 if theta < APOGEE_ANGLE_THRESH:
                     apogee_counter += 1
                     if apogee_counter > APOGEE_COUNTER_THRESH:
@@ -240,11 +230,19 @@ if __name__ == "__main__":
 
         # Set chute pin high if we are using automatic apogee detection algorithm.
         if _apogee_detected and AUTO_APOGEE_DETECT and not _chute_deployed and _armed:
-            trigger_chute_pin()
+            chute_pin.set_high()
+            _chute_deployed = True
+            _nicrome_on = True
+            time_chute_deployed = time.time()
+            debug("Chute pin HIGH")
+            print "Set chute pin HIGH"
 
         # Set chute pin back to LOW if blast cap burn time is reached
         if _nicrome_on and (time.time() - time_chute_deployed > BLAST_CAP_BURN_TIME):
-            untrigger_chute_pin()
+            chute_pin.set_low()
+            _nicrome_on = False
+            debug("Chute pin LOW")
+            print "Set chute pin to LOW"
 
         #######################################################################
         ## Update GROUND station
