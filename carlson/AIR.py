@@ -16,12 +16,13 @@ from telemetry import Telemetry
 from sensor import Sensor
 from gpio import Pin
 
-HEARTBEAT_DELAY = 1  # seconds, how often do we send state to ground station
-BLAST_CAP_BURN_TIME = 5  # seconds, how long to keep relay shorted for
-APOGEE_ANGLE_THRESH = 5 # angle in degrees combined rocket roll pitch at which we deploy chute
-APOGEE_COUNTER_THRESH = 10 # number of consecutive apogee detections before we deploy the chute
+HEARTBEAT_DELAY         = 1     # seconds, how often do we send state to ground station
 
-AUTO_APOGEE_DETECT = True   # Should we use our auto-apogee detection algorithm to control the chute?
+BLAST_CAP_BURN_TIME     = 5     # seconds, how long to keep relay shorted for
+
+AUTO_APOGEE_DETECT      = True  # Should we use our auto-apogee detection algorithm to control the chute?
+APOGEE_ANGLE_THRESH     = 5     # angle in degrees combined rocket roll pitch at which we deploy chute
+APOGEE_COUNTER_THRESH   = 10    # number of consecutive apogee detections before we deploy the chute
 
 # Should we debug?
 LOG_DEBUG   = True   # Save debug info to a local text file
@@ -35,22 +36,22 @@ def rad2deg(rad):
 if __name__ == "__main__":
 
     # Bit latches
-    arm             = False
-    logging         = False
-    deploy_chute    = False
-    power_off       = False
+    arm                 = False
+    logging             = False
+    deploy_chute        = False
+    power_off           = False
 
     # Current state latches
-    _armed            = False
-    _logging_on       = False
-    _chute_deployed   = False  # this can only be reset if disarmed
-    _nicrome_on       = False
-    _apogee_detected  = False
+    _armed              = False
+    _logging_on         = False
+    _chute_deployed     = False  # this can only be reset if disarmed
+    _nicrome_on         = False
+    _apogee_detected    = False
 
     # Set current state of air controller and declare the time we last sent a 
     # state update to the ground station
-    state           = State()
-    state_last_sent = 0
+    state               = State()
+    state_last_sent     = 0
 
     # Timing variables
     time_chute_deployed = 0
@@ -100,6 +101,20 @@ if __name__ == "__main__":
     # Initialize the GPIO pins so that we can write them high or low
     chute_pin = Pin(4)
     debug("Initialized chute pin.")
+
+    # Inline function definitions to control chute pin behavior
+    def trigger_chute_pin():
+        chute_pin.set_high()
+        _nicrome_on = True
+        _chute_deployed = True
+        time_chute_deployed = time.time()
+        debug("Chute pin HIGH")
+        print "Set chute pin to HIGH"
+    def untrigger_chute_pin():
+        chute_pin.set_low()
+        _nicrome_on = False
+        debug("Chute pin LOW")
+        print "Set chute pin to LOW"
 
     # Main loop
     t0 = 0
@@ -161,12 +176,7 @@ if __name__ == "__main__":
             ### Deploy chute ###
             if chute:
                 if not _chute_deployed and _armed:
-                    chute_pin.set_high()
-                    _nicrome_on = True
-                    _chute_deployed = True
-                    time_chute_deployed = time.time()
-                    debug("Chute pin HIGH")
-                    print "Set chute pin to HIGH"
+                    trigger_chute_pin()
 
             ### Power off ###
             if power_off:
@@ -200,9 +210,9 @@ if __name__ == "__main__":
                     data["gyro"][0],       data["gyro"][1],       data["gyro"][2]]
                 logger.write(data_vector)
                 
-                # APOGEE DETECTION
-
-                theta = np.degrees(np.arcsin(np.cos(data["fusionPose"][0]) * np.cos(data["fusionPose"][1])))
+                # Apogee detection algorithm
+                theta = np.degrees(np.arcsin(
+                    np.cos(data["fusionPose"][0]) * np.cos(data["fusionPose"][1])))
                 if theta < APOGEE_ANGLE_THRESH:
                     apogee_counter += 1
                     if apogee_counter > APOGEE_COUNTER_THRESH:
@@ -220,7 +230,7 @@ if __name__ == "__main__":
                         pass
                 # If local debugging is enabled, print to terminal directly.
                 if LOCAL_DEBUG:
-                    print "Fused:   r: %0.4f   p: %0.4f   y: %0.4f   angle: %0.4f" % \
+                    print "Fused:  ROLL: %0.4f  PITCH: %0.4f  YAW: %0.4f  ANGLE: %0.4f" % \
                             (rad2deg(data["fusionPose"][0]), 
                             rad2deg(data["fusionPose"][1]), 
                             rad2deg(data["fusionPose"][2]),
@@ -230,19 +240,11 @@ if __name__ == "__main__":
 
         # Set chute pin high if we are using automatic apogee detection algorithm.
         if _apogee_detected and AUTO_APOGEE_DETECT and not _chute_deployed and _armed:
-            chute_pin.set_high()
-            _chute_deployed = True
-            _nicrome_on = True
-            time_chute_deployed = time.time()
-            debug("Chute pin HIGH")
-            print "Set chute pin HIGH"
+            trigger_chute_pin()
 
         # Set chute pin back to LOW if blast cap burn time is reached
         if _nicrome_on and (time.time() - time_chute_deployed > BLAST_CAP_BURN_TIME):
-            chute_pin.set_low()
-            _nicrome_on = False
-            debug("Chute pin LOW")
-            print "Set chute pin to LOW"
+            untrigger_chute_pin()
 
         #######################################################################
         ## Update GROUND station

@@ -12,6 +12,9 @@ import threading
 import Queue
 import argparse
 
+# Default port for telemetry radio
+DEFAULT_PORT = "/dev/ttyUSB0"
+
 if __name__ == "__main__":
 
     state = State()
@@ -36,7 +39,7 @@ if __name__ == "__main__":
 
     # Set up argument parser to specify different port for radio via terminal
     parser = argparse.ArgumentParser(description="Ground station for the Carlson rocket flight computer.")
-    parser.add_argument("-p", "--port", default=PORT, help="Serial port of the telemetry radio.")
+    parser.add_argument("-p", "--port", default=DEFAULT_PORT, help="Serial port of the telemetry radio.")
     args = parser.parse_args()
 
     # Initialize Telemetry radio with port from ArgumentParser
