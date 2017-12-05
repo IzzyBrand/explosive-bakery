@@ -1,4 +1,5 @@
 import numpy as np
+from abc import abstractmethod
 import time
 import matplotlib.pyplot as plt
 
@@ -11,27 +12,73 @@ class E2:
 	def get_state(self):
 		return np.array([self.x,self.y,self.theta])
 
-class RocketComponent:
-	def __init__(self, position, width, height, mass):
+class RocketComponent(object):
+	def __init__(self, position, width, height, mass, name=None):
 		self.width = width
 		self.height = height
 		self.cg = self.height/2
 		self.mass = mass
 		self.position = position
+		self.name = name if name else "Unnamed"
+
+	@abstractmethod
+	def rotational_inertia(self):
+		e = "Component class must have rot inertia method"
+		raise NotImplementedError(e)
+
+class RocketBody(RocketComponent):
+	def __init__(self):
+		super(RocketBody, self).__init__(0, .038, .7, .2, "body")
+
+	# c_g is center of gravity, p is the center of the component
+	def rotational_inertia(self, cg):
+		w = self.width
+		h = self.height
+		py = self.position
+		coeff = 1./12. * h * w
+		term1 = 4 * h**2 + w**2
+		term2 = 12. * cg**2 + 12. * h * py
+		term3 = 12. * py**2 - 12 * cg * (h + 2*py)
+		return coeff * (term1 + term2 + term3)
+
+	def __repr__(self):
+		return '<rocket-component-%s>' % self.name
+
+	def __str__(self):
+		return 'component-%s' % self.name
+
+class RocketFins(RocketComponent):
+	def __init__(self):
+		super(RocketFins, self).__init__(.7, .15, .15, .06, "fins")
+
+	# cg is center of gravity, py distance from the top of the component
+	# to the top of the rocket
+	def rotational_inertia(self, cg):
+		w = self.width
+		h = self.height
+		py = self.position
+		coeff = 1./12. * h * w
+		term1 = 4 * h**2 + w**2
+		term2 = 12. * cg**2 + 12. * h * py
+		term3 = 12. * py**2 - 12 * cg * (h + 2*py)
+		return coeff * (term1 + term2 + term3)
+
+	def __repr__(self):
+		return '<rocket-component-%s>' % self.name
+
+	def __str__(self):
+		return 'component-%s' % self.name
 
 class Rocket:
-	def __init__(self):
+	def __init__(self, components):
 		self.component_drag_coeff = .82
 		self.component_lift_coeff = .6
 		self.air_density = 1.225
 
-
 		self.position = E2(0,0,np.pi/4)
 		self.velocity = E2(50.,50.,0)
 
-		tube = RocketComponent(0, .038, .7, .2)
-		fins = RocketComponent(.7, .15, .15, .06)
-		self.components = [tube,fins]
+		self.components = components
 		self.mass = 0
 		cg_sum = 0
 
@@ -39,11 +86,12 @@ class Rocket:
 			self.mass += c.mass
 			cg_sum += c.mass * (c.position + c.cg)
 
-		self.cg = cg_sum/self.mass
+		self.cg = cg_sum / self.mass
 		self.rotational_inertia = 0
 		for c in self.components:
-			self.rotational_inertia += c.mass/12. * (12*(c.position - self.cg)**2 + \
-			 12*(c.position - self.cg) * c.height + 4 * c.height**2 + c.width**2)
+			self.rotational_inertia += c.rotational_inertia(self.cg)
+
+		print self.rotational_inertia
 
 	def step(self, dt):
 
@@ -80,7 +128,9 @@ class Rocket:
 		self.position.theta += self.velocity.theta * dt
 
 if __name__ == '__main__':
-	r = Rocket()
+	fins = RocketFins()
+	body = RocketBody()
+	r = Rocket([fins, body])
 	ps = []
 	vs = []
 	ts = []
