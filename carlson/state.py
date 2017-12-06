@@ -61,8 +61,8 @@ class State:
         ret = ""
         if self.get_bit(self.ARM_BIT):       ret += "Armed + "
         if self.get_bit(self.LOGGING_BIT):   ret += "Logging + "
-        if self.get_bit(self.CHUTE_BIT):     ret += "Deployed Chute + "
-        if self.get_bit(self.POWER_OFF_BIT): ret += "Powering Off + "
         if self.get_bit(self.FREEFALL_BIT):  ret += "Freefall + "
         if self.get_bit(self.APOGEE_BIT):    ret += "Apogee + "
+        if self.get_bit(self.CHUTE_BIT):     ret += "Deployed Chute + "
+        if self.get_bit(self.POWER_OFF_BIT): ret += "Powering Off + "
         return ret[:-3]
