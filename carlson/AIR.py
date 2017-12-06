@@ -11,23 +11,21 @@ import os
 import logger as lgr
 import wirelesscommunicator as wc
 import numpy as np
+from math import sqrt
 from state import State
 from telemetry import Telemetry
 from sensor import Sensor
 from gpio import Pin
 
-HEARTBEAT_DELAY          = 1     # seconds, how often do we send state to ground station
+HEARTBEAT_DELAY          = 1     # s, how often do we send state to ground station
 
-BLAST_CAP_BURN_TIME      = 5     # seconds, how long to keep relay shorted for
+BLAST_CAP_BURN_TIME      = 5     # s, how long to keep relay shorted for
 
-THRUSTING_ACCEL_THRESH   = (0.0,0.0,10.0)  # minimum acceleration required on all axes during thrusting condition
-THRUSTING_COUNTER_THRESH = 5               # number of consecutive thrusting detections before flag is set True
-
-FREEFALL_ACCEL_THRESH    = (0.5,0.5,3.0)  # maximum absolute acceleration allowed on all axes during freefall condition
-FREEFALL_COUNTER_THRESH  = 5              # number of consecutive freefall detections before flag is set True
+FREEFALL_ACCEL_THRESH    = 0.3   # G, maximum absolute acceleration allowed on all axes for freefall detection
+FREEFALL_COUNTER_THRESH  = 10    # number of consecutive freefall detections before flag is set True
 
 AUTO_APOGEE_DETECT       = True  # should we use our auto-apogee detection algorithm to control the chute?
-APOGEE_ANGLE_THRESH      = 5     # angle in degrees combined rocket roll pitch at which we deploy chute
+APOGEE_ANGLE_THRESH      = 5     # deg, angle in degrees combined rocket roll pitch at which we deploy chute
 APOGEE_COUNTER_THRESH    = 10    # number of consecutive apogee detections before we deploy the chute
 
 # Should we debug?
@@ -50,7 +48,6 @@ if __name__ == "__main__":
     # Current state latches
     _armed              = False  # Rocket is armed.
     _logging_on         = False  # Data logging from IMU is on.
-    _thrusting_detected = False  # Rocket motor is thrusting (rocket is accelerating).
     _freefall_detected  = False  # Rocket motor is not thrusting (rocket is in freefall).
     _chute_deployed     = False  # Parachute is deployed.
     _nicrome_on         = False  # Nicrome wire is heating.
@@ -63,7 +60,6 @@ if __name__ == "__main__":
 
     # Timing / counting variables
     time_chute_deployed = 0
-    thrusting_counter   = 0
     freefall_counter    = 0
     apogee_counter      = 0
 
@@ -164,10 +160,8 @@ if __name__ == "__main__":
                 if _armed:
                     _armed = False
                     _chute_deployed = False
-                    _thrusting_detected = False
                     _freefall_detected = False
                     _apogee_detected = False
-                    thrusting_counter = 0
                     freefall_counter = 0
                     apogee_counter = 0
                     debug("Disarmed")
@@ -230,42 +224,26 @@ if __name__ == "__main__":
                     data["accel"][0],      data["accel"][1],      data["accel"][2],
                     data["gyro"][0],       data["gyro"][1],       data["gyro"][2]]
                 logger.write(data_vector)
-               
-                # Thrusting detection algorithm. Before the motor starts 
-                # thrusting, the rocket is stationary and therefore all 
-                # accelerations are minimal. This would be picked up by our
-                # freefall detection. To counteract this, we detect the rocket
-                # motor thrusting before starting the freefall and apogee
-                # algorithms, respectively. This algorithm sets 
-                # _thrusting_detected to True once accelerations higher than
-                # THRUSTING_ACCEL_THRESH have been detected on all axes for
-                # more than THRUSTING_ACCEL_COUNTER samples.
-                if abs(data["accel"][0]) > THRUSTING_ACCEL_THRESH[0] and \
-                        abs(data["accel"][1]) > THRUSTING_ACCEL_THRESH[1] and \
-                        abs(data["accel"][2]) > THRUSTING_ACCEL_THRESH[2]:
-                    thrusting_counter += 1
-                    if thrusting_counter > THRUSTING_COUNTER_THRESH:
-                        _thrusting_detected = True
-                else:
-                    thrusting_counter = 0
 
-                # Freefall detection algorithm. After the motor stops thrusting
-                # the rocket enters a period of freefall where it is no longer 
-                # accelerating, although it still may be moving upwards 
-                # rapidly. Once we have detected low readings on all three 
-                # accelerometer axes (less than FREEFALL_ACCEL_THRESH) for more
-                # than FREEFALL_COUNTER_THRESH samples, the _freefall_detected
-                # flag is set high, and the apogee detection algorithm can 
-                # begin.
-                if _thrusting_detected:
-                    if abs(data["accel"][0]) < FREEFALL_ACCEL_THRESH[0] and \
-                            abs(data["accel"][1]) < FREEFALL_ACCEL_THRESH[1] and \
-                            abs(data["accel"][2]) < FREEFALL_ACCEL_THRESH[2]:
-                        freefall_counter += 1
-                        if freefall_counter > FREEFALL_COUNTER_THRESH:
-                            _freefall_detected = True
-                    else:
-                        freefall_counter = 0
+                # Freefall detection algorithm. During freefall the 
+                # accelerometer will read zero acceleration on all axes -- this
+                # is because although the force of gravity is acting on the 
+                # rocket making it fall, the accelerometer itself is 
+                # accelerating towards the center of the Earth, so the 
+                # acceleration of the internal components is equal to that of 
+                # the external ones, measuring zero acceleration. To detect 
+                # this freefall condition, we calculate the norm of the rocket
+                # acceleration vector and when it goes below a threshold of
+                # FREEFALL_ACCEL_THRESH for FREEFALL_COUNTER_THRESH samples, we
+                # consider the rocket to be in freefall.
+                accel_norm = sqrt( \
+                    data["accel"][0]**2 + data["accel"][1]**2 + data["accel"][2]**2)
+                if accel_norm < FREEFALL_ACCEL_THRESH:
+                    freefall_counter += 1
+                    if freefall_counter > FREEFALL_COUNTER_THRESH:
+                        _freefall_detected = True
+                else:
+                    freefall_counter = 0
 
                 # Apogee detection algorithm. Theta is the angle of deviation 
                 # from the rocket's initial vertical position. When theta goes 
@@ -295,17 +273,15 @@ if __name__ == "__main__":
                 if LOCAL_DEBUG:
                     #print "accel: %.2f %.2f %.2f" % (data["accel"])
                     
-                    print "_thrusting_detected:", _thrusting_detected, \
-                            "_freefall_detected:", _freefall_detected, \
-                            "_apogee_detected:", _apogee_detected
+                    # print "_thrusting_detected:", _thrusting_detected, \
+                    #         "_freefall_detected:", _freefall_detected, \
+                    #         "_apogee_detected:", _apogee_detected
 
-                    #print "Fused:  ROLL: %0.4f  PITCH: %0.4f  YAW: %0.4f  ANGLE: %0.4f" % \
-                    #        (rad2deg(data["fusionPose"][0]), 
-                    #        rad2deg(data["fusionPose"][1]), 
-                    #        rad2deg(data["fusionPose"][2]),
-                    #        theta)
-            #else:
-            #    logger.write([time.time()-t0, "IMU_NOT_READY"])
+                    print "Fused:  ROLL: %.2f  PITCH: %.2f  YAW: %.2f  ACCEL_NORM: %.2f  ANGLE: %.2f" % \
+                           (rad2deg(data["fusionPose"][0]),
+                           rad2deg(data["fusionPose"][1]),
+                           rad2deg(data["fusionPose"][2]),
+                           accel_norm, theta)
 
         # Set chute pin high if we are using automatic apogee detection algorithm.
         if AUTO_APOGEE_DETECT and _freefall_detected and _armed:
