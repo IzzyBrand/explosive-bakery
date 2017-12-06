@@ -3,6 +3,7 @@ import numpy as np
 from components import components
 import time
 import matplotlib.pyplot as plt
+from matplotlib import animation 
 
 class E2:
     def __init__(self, x,y,theta):
@@ -35,15 +36,15 @@ class Rocket:
         init_pos_x = 0.
         init_pos_y = 0.
         # initial angle of attack
-        init_aoa = 0.1
+        init_theta = np.radians(2)
 
-        init_vel_x = 0.
-        init_vel_y = 40.
+        init_vel_x = 1.
+        init_vel_y = 50.
         # initial rotation
-        init_rot = 0.
+        init_vel_theta = 0.
 
-        self.position = E2(init_pos_x, init_pos_y, init_aoa)
-        self.velocity = E2(init_vel_x, init_vel_y, init_rot)
+        self.position = E2(init_pos_x, init_pos_y, init_theta)
+        self.velocity = E2(init_vel_x, init_vel_y, init_vel_theta)
 
         self.components = components
         self.mass = 0.
@@ -64,8 +65,12 @@ class Rocket:
         for c in self.components:
             self.rotational_inertia += c.rotational_inertia(self.cm)
 
+        assert self.cg - self.cm >= 0., "unstable rocket"
+        print self.cg - self.cm
+
     def step(self, dt):
-        aoa =  np.arctan2(self.velocity.x, self.velocity.y) - self.position.theta
+        travel_direction = np.arctan2(self.velocity.x, self.velocity.y)
+        aoa =  travel_direction - self.position.theta
         velocity2 = self.velocity.x**2 + self.velocity.y**2
         tot_lift = 0
         tot_drag = 0
@@ -82,11 +87,11 @@ class Rocket:
 
             tot_lift += lift
             tot_drag += drag
-            torque += (drag * sin(aoa) + lift * cos(aoa)) * abs(self.cg - self.cm) + rotational_drag
+            torque += (drag * sin(aoa) + lift * cos(aoa)) * abs(self.cg - self.cm) + 10. * rotational_drag
 
 
-        acceleration_x = sin(self.position.theta) * drag - cos(self.position.theta) * lift
-        acceleration_y = cos(self.position.theta) * drag + sin(self.position.theta) * lift
+        acceleration_x = sin(travel_direction) * drag - cos(travel_direction) * lift
+        acceleration_y = cos(travel_direction) * drag + sin(travel_direction) * lift
         
         self.velocity.x += acceleration_x * dt
         self.velocity.y += (acceleration_y - 9.81) * dt
@@ -104,13 +109,14 @@ if __name__ == '__main__':
     start_time = time.time()
     t = 0
     tt = t
-    for i in range(200000):
+    time_multiple = 6.
+    for i in range(40000):
         if r.position.y < 0:
             break
 
         t = time.time() - start_time
-        ts.append(t)
-        dt = (t - tt)
+        ts.append(t*time_multiple)
+        dt = (t - tt) * time_multiple
         r.step(dt)
         ps.append(r.position.get_state())
         vs.append(r.velocity.get_state())
@@ -119,10 +125,16 @@ if __name__ == '__main__':
 
     ps = np.array(ps)
     vs = np.array(vs)
-    plt.plot(ts, vs[:,0], label='$v_x$')
-    plt.plot(ts, vs[:,1], label='$v_y$')
-    plt.plot(ts, ps[:,1], label='$y$')
-    plt.plot(ts, ps[:,2], label='$\\theta$')
-    plt.plot(ts[:-1], np.diff(vs[:,1])/(ts[:-1]), label='$a_y$')
+    # plt.plot(ts, vs[:,0], label='$v_x$')
+    # plt.plot(ts, vs[:,1], label='$v_y$')
+    # plt.plot(ts, ps[:,1], label='$y$')
+    plt.plot(ts, ps[:,2] % (2*pi), label='$\\theta$')
+    plt.plot(ts, np.arctan2(vs[:,0], vs[:,1]), label="travel_direction")
+    apogee = ts[np.argmin(np.absolute(vs[:,1]))]
+    plt.axvline(x=apogee, label='')
+    # plt.plot(ts[:-1], np.diff(vs[:,1])/(ts[:-1]), label='$a_y$')
     plt.legend()
     plt.show()
+    plt.savefig('uh.png')
+    plt.clf()
+
