@@ -20,7 +20,10 @@ HEARTBEAT_DELAY         = 1     # seconds, how often do we send state to ground 
 
 BLAST_CAP_BURN_TIME     = 5     # seconds, how long to keep relay shorted for
 
-AUTO_APOGEE_DETECT      = True  # Should we use our auto-apogee detection algorithm to control the chute?
+FREEFALL_ACCEL_THRESH   = 0.5   # maximum absolute acceleration allowed on all axes during freefall condition
+FREEFALL_COUNTER_THRESH = 10    # number of consecutive freefall detections before in freefall
+
+AUTO_APOGEE_DETECT      = True  # should we use our auto-apogee detection algorithm to control the chute?
 APOGEE_ANGLE_THRESH     = 5     # angle in degrees combined rocket roll pitch at which we deploy chute
 APOGEE_COUNTER_THRESH   = 10    # number of consecutive apogee detections before we deploy the chute
 
@@ -44,6 +47,7 @@ if __name__ == "__main__":
     # Current state latches
     _armed              = False
     _logging_on         = False
+    _freefall_detected  = False
     _chute_deployed     = False  # this can only be reset if disarmed
     _nicrome_on         = False
     _apogee_detected    = False
@@ -53,8 +57,10 @@ if __name__ == "__main__":
     state               = State()
     state_last_sent     = 0
 
-    # Timing variables
+    # Timing / counting variables
     time_chute_deployed = 0
+    freefall_counter    = 0
+    apogee_counter      = 0
 
     ###########################################################################
     ## Initialize Wireless Communication
@@ -166,6 +172,7 @@ if __name__ == "__main__":
                     logger.start_video()  # will only do something if camera's enabled
                     t0 = time.time()  # reset reference time
                     _logging_on = True
+                    _freefall_detected = False
                     _apogee_detected = False
                     apogee_counter = 0
                     debug("Started logging")
@@ -216,15 +223,37 @@ if __name__ == "__main__":
                     data["gyro"][0],       data["gyro"][1],       data["gyro"][2]]
                 logger.write(data_vector)
                 
-                # Apogee detection algorithm
+                # Freefall detection algorithm. After the motor stops thrusting
+                # the rocket enters a period of freefall where it is no longer 
+                # accelerating, although it still may be moving upwards 
+                # rapidly. Once we have detected low readings on all three 
+                # accelerometer axes (less than FREEFALL_ACCEL_THRESH) for more
+                # than FREEFALL_COUNTER_THRESH samples, the _freefall_detected
+                # flag is set high, and the apogee detection algorithm can 
+                # begin.
+                if abs(data["accel"][0]) < FREEFALL_ACCEL_THRESH and \
+                        abs(data["accel"][0]) < FREEFALL_ACCEL_THRESH and \
+                        abs(data["accel"][0]) < FREEFALL_ACCEL_THRESH:
+                    freefall_counter += 1
+                    if freefall_counter > FREEFALL_COUNTER_THRESH:
+                        _freefall_detected = True
+                else:
+                    freefall_counter = 0
+
+                # Apogee detection algorithm. Theta is the angle of deviation 
+                # from the rocket's initial vertical position. When theta goes 
+                # below APOGEE_ANGLE_THRESH for more than APOGEE_COUNTER_THRESH
+                # samples, the _apogee_detected flag is set high and the chute
+                # pin is triggered to light the blast cap nicrome.
                 theta = np.degrees(np.arcsin(
                     np.cos(data["fusionPose"][0]) * np.cos(data["fusionPose"][1])))
-                if theta < APOGEE_ANGLE_THRESH:
-                    apogee_counter += 1
-                    if apogee_counter > APOGEE_COUNTER_THRESH:
-                        _apogee_detected = True
-                else:
-                    apogee_counter = 0
+                if _freefall_detected:
+                    if theta < APOGEE_ANGLE_THRESH:
+                        apogee_counter += 1
+                        if apogee_counter > APOGEE_COUNTER_THRESH:
+                            _apogee_detected = True
+                    else:
+                        apogee_counter = 0
                 
                 # If wifi debugging is enabled, send the data over UDP.
                 if UDP_DEBUG and UDP_DEBUG_SOCKET_INIT_OK:
@@ -246,8 +275,9 @@ if __name__ == "__main__":
             #    logger.write([time.time()-t0, "IMU_NOT_READY"])
 
         # Set chute pin high if we are using automatic apogee detection algorithm.
-        if AUTO_APOGEE_DETECT and _armed and _apogee_detected and not _chute_deployed:
-            trigger_chute_pin()
+        if AUTO_APOGEE_DETECT and _freefall_detected and _armed:
+            if _apogee_detected and not _chute_deployed:
+                trigger_chute_pin()
 
         # Set chute pin back to LOW if blast cap burn time is reached
         if _nicrome_on and (time.time() - time_chute_deployed > BLAST_CAP_BURN_TIME):
