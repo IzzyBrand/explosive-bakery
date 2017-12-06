@@ -1,5 +1,6 @@
 from abc import abstractmethod
 import numpy as np
+from math import sin, cos, pi
 
 class RocketComponent(object):
     def __init__(self, position, width, height, mass, name=None):
@@ -7,6 +8,7 @@ class RocketComponent(object):
         self.height = height
         self.mass = mass
         self.position = position
+        self.area = self.component_area()
         self.cg = self.component_centroid_y()
         self.cm = self.component_center_mass_y()
         self.abs_cg = self.cg + self.position
@@ -33,6 +35,16 @@ class RocketComponent(object):
         e = "Component class must have rot inertia method"
         raise NotImplementedError(e)
 
+    @abstractmethod
+    def frontal_v_area(self, aoa):
+        e = "Component class must have frontal_v_area method"
+        raise NotImplementedError(e)
+
+    @abstractmethod
+    def frontal_v_area(self, aoa):
+        e = "Component class must have frontal_h_area method"
+        raise NotImplementedError(e)
+
 
 class Rectangle(RocketComponent):
     def __init__(self, *args):
@@ -56,6 +68,12 @@ class Rectangle(RocketComponent):
         term2 = 12. * cg**2 + 12. * h * py
         term3 = 12. * py**2 - 12 * cg * (h + 2*py)
         return coeff * (term1 + term2 + term3)
+
+    def frontal_v_area(self, aoa):
+        return self.area * sin(aoa)
+
+    def frontal_h_area(self, aoa):
+        return self.area * cos(aoa)
 
 class RocketBody(Rectangle):
     def __init__(self):
