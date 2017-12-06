@@ -16,16 +16,19 @@ from telemetry import Telemetry
 from sensor import Sensor
 from gpio import Pin
 
-HEARTBEAT_DELAY         = 1     # seconds, how often do we send state to ground station
+HEARTBEAT_DELAY          = 1     # seconds, how often do we send state to ground station
 
-BLAST_CAP_BURN_TIME     = 5     # seconds, how long to keep relay shorted for
+BLAST_CAP_BURN_TIME      = 5     # seconds, how long to keep relay shorted for
 
-FREEFALL_ACCEL_THRESH   = 0.5   # maximum absolute acceleration allowed on all axes during freefall condition
-FREEFALL_COUNTER_THRESH = 10    # number of consecutive freefall detections before in freefall
+THRUSTING_ACCEL_THRESH   = (0.0,0.0,10.0)  # minimum acceleration required on all axes during thrusting condition
+THRUSTING_COUNTER_THRESH = 5               # number of consecutive thrusting detections before flag is set True
 
-AUTO_APOGEE_DETECT      = True  # should we use our auto-apogee detection algorithm to control the chute?
-APOGEE_ANGLE_THRESH     = 5     # angle in degrees combined rocket roll pitch at which we deploy chute
-APOGEE_COUNTER_THRESH   = 10    # number of consecutive apogee detections before we deploy the chute
+FREEFALL_ACCEL_THRESH    = (0.5,0.5,3.0)  # maximum absolute acceleration allowed on all axes during freefall condition
+FREEFALL_COUNTER_THRESH  = 5              # number of consecutive freefall detections before flag is set True
+
+AUTO_APOGEE_DETECT       = True  # should we use our auto-apogee detection algorithm to control the chute?
+APOGEE_ANGLE_THRESH      = 5     # angle in degrees combined rocket roll pitch at which we deploy chute
+APOGEE_COUNTER_THRESH    = 10    # number of consecutive apogee detections before we deploy the chute
 
 # Should we debug?
 LOG_DEBUG   = True   # Save debug info to a local text file
@@ -45,12 +48,13 @@ if __name__ == "__main__":
     power_off           = False
 
     # Current state latches
-    _armed              = False
-    _logging_on         = False
-    _freefall_detected  = False
-    _chute_deployed     = False  # this can only be reset if disarmed
-    _nicrome_on         = False
-    _apogee_detected    = False
+    _armed              = False  # Rocket is armed.
+    _logging_on         = False  # Data logging from IMU is on.
+    _thrusting_detected = False  # Rocket motor is thrusting (rocket is accelerating).
+    _freefall_detected  = False  # Rocket motor is not thrusting (rocket is in freefall).
+    _chute_deployed     = False  # Parachute is deployed.
+    _nicrome_on         = False  # Nicrome wire is heating.
+    _apogee_detected    = False  # Algorithm detects that apogee is reached.
 
     # Set current state of air controller and declare the time we last sent a 
     # state update to the ground station
@@ -59,6 +63,7 @@ if __name__ == "__main__":
 
     # Timing / counting variables
     time_chute_deployed = 0
+    thrusting_counter   = 0
     freefall_counter    = 0
     apogee_counter      = 0
 
@@ -159,6 +164,12 @@ if __name__ == "__main__":
                 if _armed:
                     _armed = False
                     _chute_deployed = False
+                    _thrusting_detected = False
+                    _freefall_detected = False
+                    _apogee_detected = False
+                    thrusting_counter = 0
+                    freefall_counter = 0
+                    apogee_counter = 0
                     debug("Disarmed")
                     print "Disarmed"
 
@@ -172,9 +183,6 @@ if __name__ == "__main__":
                     logger.start_video()  # will only do something if camera's enabled
                     t0 = time.time()  # reset reference time
                     _logging_on = True
-                    _freefall_detected = False
-                    _apogee_detected = False
-                    apogee_counter = 0
                     debug("Started logging")
                     print "Started logging"
             else:
@@ -222,7 +230,25 @@ if __name__ == "__main__":
                     data["accel"][0],      data["accel"][1],      data["accel"][2],
                     data["gyro"][0],       data["gyro"][1],       data["gyro"][2]]
                 logger.write(data_vector)
-                
+               
+                # Thrusting detection algorithm. Before the motor starts 
+                # thrusting, the rocket is stationary and therefore all 
+                # accelerations are minimal. This would be picked up by our
+                # freefall detection. To counteract this, we detect the rocket
+                # motor thrusting before starting the freefall and apogee
+                # algorithms, respectively. This algorithm sets 
+                # _thrusting_detected to True once accelerations higher than
+                # THRUSTING_ACCEL_THRESH have been detected on all axes for
+                # more than THRUSTING_ACCEL_COUNTER samples.
+                if abs(data["accel"][0]) > THRUSTING_ACCEL_THRESH[0] and \
+                        abs(data["accel"][1]) > THRUSTING_ACCEL_THRESH[1] and \
+                        abs(data["accel"][2]) > THRUSTING_ACCEL_THRESH[2]:
+                    thrusting_counter += 1
+                    if thrusting_counter > THRUSTING_COUNTER_THRESH:
+                        _thrusting_detected = True
+                else:
+                    thrusting_counter = 0
+
                 # Freefall detection algorithm. After the motor stops thrusting
                 # the rocket enters a period of freefall where it is no longer 
                 # accelerating, although it still may be moving upwards 
@@ -231,14 +257,15 @@ if __name__ == "__main__":
                 # than FREEFALL_COUNTER_THRESH samples, the _freefall_detected
                 # flag is set high, and the apogee detection algorithm can 
                 # begin.
-                if abs(data["accel"][0]) < FREEFALL_ACCEL_THRESH and \
-                        abs(data["accel"][0]) < FREEFALL_ACCEL_THRESH and \
-                        abs(data["accel"][0]) < FREEFALL_ACCEL_THRESH:
-                    freefall_counter += 1
-                    if freefall_counter > FREEFALL_COUNTER_THRESH:
-                        _freefall_detected = True
-                else:
-                    freefall_counter = 0
+                if _thrusting_detected:
+                    if abs(data["accel"][0]) < FREEFALL_ACCEL_THRESH[0] and \
+                            abs(data["accel"][1]) < FREEFALL_ACCEL_THRESH[1] and \
+                            abs(data["accel"][2]) < FREEFALL_ACCEL_THRESH[2]:
+                        freefall_counter += 1
+                        if freefall_counter > FREEFALL_COUNTER_THRESH:
+                            _freefall_detected = True
+                    else:
+                        freefall_counter = 0
 
                 # Apogee detection algorithm. Theta is the angle of deviation 
                 # from the rocket's initial vertical position. When theta goes 
@@ -266,11 +293,17 @@ if __name__ == "__main__":
 
                 # If local debugging is enabled, print to terminal directly.
                 if LOCAL_DEBUG:
-                    print "Fused:  ROLL: %0.4f  PITCH: %0.4f  YAW: %0.4f  ANGLE: %0.4f" % \
-                            (rad2deg(data["fusionPose"][0]), 
-                            rad2deg(data["fusionPose"][1]), 
-                            rad2deg(data["fusionPose"][2]),
-                            theta)
+                    #print "accel: %.2f %.2f %.2f" % (data["accel"])
+                    
+                    print "_thrusting_detected:", _thrusting_detected, \
+                            "_freefall_detected:", _freefall_detected, \
+                            "_apogee_detected:", _apogee_detected
+
+                    #print "Fused:  ROLL: %0.4f  PITCH: %0.4f  YAW: %0.4f  ANGLE: %0.4f" % \
+                    #        (rad2deg(data["fusionPose"][0]), 
+                    #        rad2deg(data["fusionPose"][1]), 
+                    #        rad2deg(data["fusionPose"][2]),
+                    #        theta)
             #else:
             #    logger.write([time.time()-t0, "IMU_NOT_READY"])
 
