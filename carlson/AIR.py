@@ -273,9 +273,8 @@ if __name__ == "__main__":
                 if LOCAL_DEBUG:
                     #print "accel: %.2f %.2f %.2f" % (data["accel"])
                     
-                    # print "_thrusting_detected:", _thrusting_detected, \
-                    #         "_freefall_detected:", _freefall_detected, \
-                    #         "_apogee_detected:", _apogee_detected
+                    # print "_freefall_detected:", _freefall_detected, \
+                    #       "_apogee_detected:", _apogee_detected
 
                     print "Fused:  ROLL: %.2f  PITCH: %.2f  YAW: %.2f  ACCEL_NORM: %.2f  ANGLE: %.2f" % \
                            (rad2deg(data["fusionPose"][0]),
