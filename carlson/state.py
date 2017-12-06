@@ -18,8 +18,14 @@ class State:
         self.CHUTE         = 4    # toggle parachute GPIO pin
         self.CHUTE_BIT     = 2
 
-        self.POWER_OFF     = 8    # shut down computer (last possible state)
-        self.POWER_OFF_BIT = 3 
+        self.POWER_OFF     = 8    # shut down Carlson computer
+        self.POWER_OFF_BIT = 3
+
+        self.FREEFALL      = 16   # accelerometers detected freefall condition
+        self.FREEFALL_BIT  = 4
+
+        self.APOGEE        = 32   # rotation greater than 90 deg from vertical, deploy chute
+        self.APOGEE_BIT    = 5
 
         # Define state value holder
         self.state = self.IDLE
@@ -57,4 +63,6 @@ class State:
         if self.get_bit(self.LOGGING_BIT):   ret += "Logging + "
         if self.get_bit(self.CHUTE_BIT):     ret += "Deployed Chute + "
         if self.get_bit(self.POWER_OFF_BIT): ret += "Powering Off + "
+        if self.get_bit(self.FREEFALL_BIT):  ret += "Freefall + "
+        if self.get_bit(self.APOGEE_BIT):    ret += "Apogee + "
         return ret[:-3]

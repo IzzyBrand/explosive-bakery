@@ -22,11 +22,11 @@ HEARTBEAT_DELAY          = 1     # s, how often do we send state to ground stati
 BLAST_CAP_BURN_TIME      = 5     # s, how long to keep relay shorted for
 
 FREEFALL_ACCEL_THRESH    = 0.3   # G, maximum absolute acceleration allowed on all axes for freefall detection
-FREEFALL_COUNTER_THRESH  = 10    # number of consecutive freefall detections before flag is set True
+FREEFALL_COUNTER_THRESH  = 20    # number of consecutive freefall detections before flag is set True
 
 AUTO_APOGEE_DETECT       = True  # should we use our auto-apogee detection algorithm to control the chute?
 APOGEE_ANGLE_THRESH      = 5     # deg, angle in degrees combined rocket roll pitch at which we deploy chute
-APOGEE_COUNTER_THRESH    = 10    # number of consecutive apogee detections before we deploy the chute
+APOGEE_COUNTER_THRESH    = 20    # number of consecutive apogee detections before we deploy the chute
 
 # Should we debug?
 LOG_DEBUG   = True   # Save debug info to a local text file
@@ -191,7 +191,6 @@ if __name__ == "__main__":
             if chute:
                 if not _chute_deployed and _armed:
                     trigger_chute_pin()
-                    print "_chute_deployed:", _chute_deployed
 
             ### Power off ###
             if power_off:
@@ -272,15 +271,15 @@ if __name__ == "__main__":
                 # If local debugging is enabled, print to terminal directly.
                 if LOCAL_DEBUG:
                     #print "accel: %.2f %.2f %.2f" % (data["accel"])
-                    
-                    # print "_freefall_detected:", _freefall_detected, \
-                    #       "_apogee_detected:", _apogee_detected
 
-                    print "Fused:  ROLL: %.2f  PITCH: %.2f  YAW: %.2f  ACCEL_NORM: %.2f  ANGLE: %.2f" % \
+                    #print "_freefall_detected:", _freefall_detected, \
+                    #        "_apogee_detected:", _apogee_detected
+
+                    print "R: %.2f  P: %.2f  Y: %.2f  ACC_NORM: %.2f  ANGLE: %.2f  FREEFALL: %s  APOGEE: %s" % \
                            (rad2deg(data["fusionPose"][0]),
                            rad2deg(data["fusionPose"][1]),
                            rad2deg(data["fusionPose"][2]),
-                           accel_norm, theta)
+                           accel_norm, theta, _freefall_detected, _apogee_detected)
 
         # Set chute pin high if we are using automatic apogee detection algorithm.
         if AUTO_APOGEE_DETECT and _freefall_detected and _armed:
@@ -298,9 +297,11 @@ if __name__ == "__main__":
         # Update ground station once per HEARTBEAT_DELAY
         if time.time() - state_last_sent > HEARTBEAT_DELAY:
             state.set(state.IDLE)  # clear state and rebuild
-            if _armed:          state.add(state.ARM)
-            if _logging_on:     state.add(state.LOGGING)
-            if _chute_deployed: state.add(state.CHUTE)
+            if _armed:             state.add(state.ARM)
+            if _logging_on:        state.add(state.LOGGING)
+            if _chute_deployed:    state.add(state.CHUTE)
+            if _freefall_detected: state.add(state.FREEFALL)
+            if _apogee_detected:   state.add(state.APOGEE)
             radio.write(chr(state.state))
             state_last_sent = time.time()
             debug("Sent heartbeat (%d)" % state.state)
