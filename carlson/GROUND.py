@@ -55,6 +55,7 @@ if __name__ == "__main__":
     a:\tArm
     d:\tDisarm
     l:\tArm and log
+    c:\tForce chute deploy
     k:\tDisarm and poweroff
     '''
     # Respond to user input, non-blocking.
