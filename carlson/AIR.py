@@ -21,7 +21,7 @@ HEARTBEAT_DELAY          = 1     # s, how often do we send state to ground stati
 
 BLAST_CAP_BURN_TIME      = 5     # s, how long to keep relay shorted for
 
-FREEFALL_ACCEL_THRESH    = 0.3   # G, maximum absolute acceleration allowed on all axes for freefall detection
+FREEFALL_ACCEL_THRESH    = 0.5   # G, maximum absolute acceleration allowed on all axes for freefall detection
 FREEFALL_COUNTER_THRESH  = 20    # number of consecutive freefall detections before flag is set True
 
 AUTO_APOGEE_DETECT       = True  # should we use our auto-apogee detection algorithm to control the chute?
@@ -32,7 +32,7 @@ APOGEE_COUNTER_THRESH    = 20    # number of consecutive apogee detections befor
 LOG_DEBUG   = True   # Save debug info to a local text file
 # TODO: **important** THIS OPTION (UDP_DEBUG) SHOULD BE FALSE UNLESS MANUALLY SPECIFIED BY A FLAG (ARGPARSER)
 UDP_DEBUG   = True   # Send info across network to another machine on the network
-LOCAL_DEBUG = True   # Print IMU data to terminal directly. Only use if ssh'd into Carlson directly.
+LOCAL_DEBUG = False   # Print IMU data to terminal directly. Only use if ssh'd into Carlson directly.
 
 def rad2deg(rad):
     return rad * 57.2958
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     debug("Initialized sensor.")
 
     # Initialize the GPIO pins so that we can write them high or low
-    chute_pin = Pin(4)
+    chute_pin = Pin(26)
     debug("Initialized chute pin.")
 
     # Inline function definitions to control chute pin behavior. Note the 
